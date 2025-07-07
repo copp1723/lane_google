@@ -1,19 +1,19 @@
 import { useState, useEffect } from 'react'
-import { Button } from './src/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './src/components/ui/card'
-import { Input } from './src/components/ui/input'
-import { Textarea } from './src/components/ui/textarea'
-import { Badge } from './src/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './src/components/ui/tabs'
+import { Button } from './components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card'
+import { Input } from './components/ui/input'
+import { Textarea } from './components/ui/textarea'
+import { Badge } from './components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs'
 import { MessageCircle, Settings, BarChart3, Users, DollarSign, TrendingUp, Activity, Target, Zap, Monitor } from 'lucide-react'
 import './App.css'
-import EnvironmentConfig from './src/config/environment.js';
+import EnvironmentConfig from './config/environment.js';
 
 // Import advanced dashboard components
-import AdvancedAnalyticsDashboard from './src/components/dashboards/AdvancedAnalyticsDashboard'
-import BudgetPacingDashboard from './src/components/dashboards/BudgetPacingDashboard'
-import PerformanceOptimizationDashboard from './src/components/dashboards/PerformanceOptimizationDashboard'
-import RealTimeMonitoringDashboard from './src/components/dashboards/RealTimeMonitoringDashboard'
+import AdvancedAnalyticsDashboard from './components/dashboards/AdvancedAnalyticsDashboard'
+import BudgetPacingDashboard from './components/dashboards/BudgetPacingDashboard'
+import PerformanceOptimizationDashboard from './components/dashboards/PerformanceOptimizationDashboard'
+import RealTimeMonitoringDashboard from './components/dashboards/RealTimeMonitoringDashboard'
 
 const API_BASE_URL = EnvironmentConfig.getApiBaseUrl();
 
