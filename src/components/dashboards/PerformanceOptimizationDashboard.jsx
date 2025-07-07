@@ -32,7 +32,7 @@ import {
   Settings,
   RefreshCw
 } from 'lucide-react';
-import EnvironmentConfig from '../config/environment.js';
+import EnvironmentConfig from '../../config/environment.js';
 
 const API_BASE_URL = EnvironmentConfig.getApiBaseUrl();
 
