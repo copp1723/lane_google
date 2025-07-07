@@ -1,0 +1,61 @@
+# Prettier ignore patterns
+# Files and directories to exclude from formatting
+
+# Dependencies
+node_modules/
+dist/
+build/
+coverage/
+
+# Generated files
+*.min.js
+*.min.css
+*.bundle.js
+*.bundle.css
+
+# Package files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.development
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Cache directories
+.cache/
+.parcel-cache/
+.vite/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Documentation
+CHANGELOG.md
+LICENSE
+README.md
+
+# Configuration files that should maintain specific formatting
+*.config.js
+*.config.ts
+vite.config.*
+vitest.config.*
+tailwind.config.*
+

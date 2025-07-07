@@ -1,0 +1,55 @@
+# EditorConfig Configuration
+# Maintains consistent coding styles across different editors and IDEs
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.{py,pyi}]
+indent_size = 4
+max_line_length = 88
+
+[*.{js,jsx,ts,tsx}]
+indent_size = 2
+max_line_length = 80
+
+[*.{json,yml,yaml}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = 80
+
+[*.{sh,bash}]
+indent_size = 2
+
+[Makefile]
+indent_style = tab
+
+[*.{sql,psql}]
+indent_size = 2
+
+[*.{html,css,scss}]
+indent_size = 2
+
+[*.toml]
+indent_size = 2
+
+[*.ini]
+indent_size = 4
+
+[*.cfg]
+indent_size = 4
+
+[.flake8]
+indent_size = 4
+
+[requirements*.txt]
+indent_size = 4
+
