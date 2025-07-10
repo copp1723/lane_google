@@ -10,7 +10,7 @@ from src.auth.authentication import (
     extract_token_from_request
 )
 from src.models.user import User, UserStatus
-from database import db
+from src.config.database import db
 import re
 
 logger = logging.getLogger(__name__)

@@ -1,0 +1,173 @@
+/* Lane MCP Enhanced UI Styles - MAXIMUM PRIORITY */
+
+/* Force override ALL Tailwind defaults */
+*, *::before, *::after {
+  box-sizing: border-box !important;
+}
+
+html, body, #root {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  min-height: 100vh !important;
+  overflow-x: hidden !important;
+}
+
+/* CRITICAL: Override Tailwind's background with maximum specificity */
+html body {
+  background: linear-gradient(135deg, #f8fafc 0%, #dbeafe 50%, #e0e7ff 100%) !important;
+}
+
+body#root, body > #root, body div#root {
+  background: transparent !important;
+}
+
+/* Override any inline styles or Tailwind utilities */
+[class*="bg-"] {
+  background-color: transparent !important;
+}
+
+/* Ensure our gradient background is always visible */
+.min-h-screen,
+.h-screen,
+.h-full,
+[class*="min-h-"],
+[class*="h-"] {
+  background: transparent !important;
+}
+
+/* Animation keyframes */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.4;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(-25%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Utility classes for animations */
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+}
+
+.animate-bounce {
+  animation: bounce 1s infinite !important;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite !important;
+}
+
+/* Glass morphism utilities */
+.glass-morphism {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.glass-morphism-strong {
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Gradient text utility */
+.gradient-text-enhanced {
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  text-fill-color: transparent !important;
+}
+
+/* Shadow utilities */
+.shadow-glow {
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1) !important;
+}
+
+.shadow-glow-lg {
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Hover effects */
+.hover-lift {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.hover-lift:hover {
+  transform: translateY(-8px) scale(1.02) !important;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Ensure all text is visible */
+* {
+  color: inherit !important;
+  visibility: visible !important;
+}
+
+/* Fix any potential z-index issues */
+.relative {
+  z-index: 1 !important;
+}
+
+/* Ensure interactive elements are clickable */
+button, a, input, textarea, select {
+  pointer-events: auto !important;
+}
+
+/* Override any conflicting card styles */
+.card,
+[class*="card"] {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+
+/* Force visibility of floating orbs */
+.floating-orbs,
+.orb {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 0.3 !important;
+}
+
+/* Debugging - uncomment to see element boundaries */
+/* * {
+  outline: 1px solid red !important;
+} */

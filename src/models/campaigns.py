@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from src.models.campaign import Campaign, db
+from src.models.user import User
 from src.routes.google_ads import get_google_ads_client
 from google.ads.googleads.errors import GoogleAdsException
 import json
@@ -8,31 +10,39 @@ from datetime import datetime
 campaigns_bp = Blueprint('campaigns', __name__)
 
 @campaigns_bp.route('/create', methods=['POST'])
+@jwt_required()
 def create_campaign():
     """Create a new Google Ads campaign from AI-generated brief"""
     try:
+        # Get authenticated user
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
         data = request.get_json()
         if not data:
             return jsonify({'error': 'Request data is required'}), 400
-        
+
         required_fields = ['customer_id', 'campaign_brief']
         missing_fields = [field for field in required_fields if field not in data]
         if missing_fields:
             return jsonify({'error': f'Missing required fields: {", ".join(missing_fields)}'}), 400
-        
+
         customer_id = data['customer_id']
         campaign_brief = data['campaign_brief']
-        
+
         # Extract campaign parameters from brief
         campaign_name = campaign_brief.get('campaign_name', 'AI Generated Campaign')
         budget_micros = int(float(campaign_brief.get('budget', 1000)) * 1000000)  # Convert to micros
-        
+
         # Store campaign brief in database
         campaign_record = Campaign(
             name=campaign_name,
             customer_id=customer_id,
             brief=json.dumps(campaign_brief),
             status='draft',
+            created_by=user.id,  # Link campaign to authenticated user
             created_at=datetime.utcnow()
         )
         
@@ -53,6 +63,7 @@ def create_campaign():
         return jsonify({'error': f'Failed to create campaign: {str(e)}'}), 500
 
 @campaigns_bp.route('/approve/<int:campaign_id>', methods=['POST'])
+@jwt_required()
 def approve_campaign(campaign_id):
     """Approve a campaign and create it in Google Ads"""
     try:
@@ -130,6 +141,7 @@ def approve_campaign(campaign_id):
         return jsonify({'error': f'Failed to approve campaign: {str(e)}'}), 500
 
 @campaigns_bp.route('/list', methods=['GET'])
+@jwt_required()
 def list_campaigns():
     """List all campaigns in the database"""
     try:

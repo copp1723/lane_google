@@ -11,12 +11,9 @@ from typing import Dict, List, Optional, Any
 from enum import Enum
 from dataclasses import dataclass, field
 import json
-from database import db
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-from ai_agent import GoogleAdsAgent
-from google_ads import GoogleAdsService
+from src.config.database import db
+# GoogleAdsAgent not implemented yet
+from src.services.real_google_ads import RealGoogleAdsService
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +81,7 @@ class WorkflowStatus:
 class CampaignOrchestrator:
     """Orchestrates campaign management using multiple agents"""
     
-    def __init__(self, google_ads_service: GoogleAdsService):
+    def __init__(self, google_ads_service: RealGoogleAdsService):
         self.google_ads_service = google_ads_service
         self.agents = {}
         self.workflows = {}
@@ -95,11 +92,12 @@ class CampaignOrchestrator:
     def _initialize_agents(self):
         """Initialize specialized agents"""
         # Create specialized agents for each role
-        self.agents[AgentRole.STRATEGIST] = GoogleAdsAgent()
-        self.agents[AgentRole.CREATOR] = GoogleAdsAgent()
-        self.agents[AgentRole.OPTIMIZER] = GoogleAdsAgent()
-        self.agents[AgentRole.MONITOR] = GoogleAdsAgent()
-        self.agents[AgentRole.ANALYST] = GoogleAdsAgent()
+        # TODO: Implement GoogleAdsAgent
+        # self.agents[AgentRole.STRATEGIST] = GoogleAdsAgent()
+        # self.agents[AgentRole.CREATOR] = GoogleAdsAgent()
+        # self.agents[AgentRole.OPTIMIZER] = GoogleAdsAgent()
+        # self.agents[AgentRole.MONITOR] = GoogleAdsAgent()
+        # self.agents[AgentRole.ANALYST] = GoogleAdsAgent()
         
         logger.info(f"Initialized {len(self.agents)} specialized agents")
     
@@ -311,7 +309,7 @@ class CampaignOrchestrator:
             task.error = str(e)
             workflow['status'].failed_tasks += 1
     
-    async def _execute_phase_task(self, task: AgentTask, agent: GoogleAdsAgent) -> Dict[str, Any]:
+    async def _execute_phase_task(self, task: AgentTask, agent: Any) -> Dict[str, Any]:
         """Execute task based on phase"""
         brief = task.context.get('brief', {})
         

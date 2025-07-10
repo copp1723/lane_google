@@ -19,7 +19,7 @@ from src.services.campaign_orchestrator import CampaignOrchestrator
 from src.services.analytics_engine import analytics_engine
 from src.services.approval_workflow import approval_workflow, ApprovalType, Priority
 from campaign import Campaign
-from database import db
+from src.config.database import db
 
 
 class TestLaneMCPIntegration:

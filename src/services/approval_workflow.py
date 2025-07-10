@@ -10,7 +10,7 @@ from typing import Dict, List, Optional, Any
 from enum import Enum
 from dataclasses import dataclass, field
 import asyncio
-from database import db
+from src.config.database import db
 
 logger = logging.getLogger(__name__)
 

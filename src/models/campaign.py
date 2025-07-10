@@ -1,13 +1,11 @@
-from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-
-db = SQLAlchemy()
+from src.config.database import db
 
 class Campaign(db.Model):
     """Campaign model for storing campaign briefs and tracking status"""
-    
+
     __tablename__ = 'campaigns'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), nullable=False)
     customer_id = db.Column(db.String(50), nullable=False)  # Google Ads customer ID
@@ -17,6 +15,9 @@ class Campaign(db.Model):
     status = db.Column(db.String(50), nullable=False, default='draft')  # draft, approved, active, paused, cancelled
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     approved_at = db.Column(db.DateTime, nullable=True)
+
+    # Foreign key to link campaign to the user who created it
+    created_by = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=True)
     
     # Budget and pacing fields
     budget_amount = db.Column(db.Float, nullable=True)  # Monthly budget
@@ -37,11 +38,13 @@ class Campaign(db.Model):
             'id': self.id,
             'name': self.name,
             'customer_id': self.customer_id,
+            'account_id': self.account_id,
             'google_campaign_id': self.google_campaign_id,
             'brief': self.brief,
             'status': self.status,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'approved_at': self.approved_at.isoformat() if self.approved_at else None,
+            'created_by': self.created_by,
             'budget_amount': self.budget_amount,
             'current_spend': self.current_spend,
             'pacing_strategy': self.pacing_strategy,

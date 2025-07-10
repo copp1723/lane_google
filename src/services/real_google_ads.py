@@ -25,6 +25,10 @@ class RealGoogleAdsService:
     def _initialize_client(self):
         """Initialize Google Ads client with credentials"""
         try:
+            # Load environment variables
+            from dotenv import load_dotenv
+            load_dotenv()
+            
             # Check for required environment variables
             required_env_vars = [
                 'GOOGLE_ADS_CLIENT_ID',

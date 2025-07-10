@@ -2,7 +2,8 @@
 API endpoints for advanced dashboard components
 """
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, g
+from src.auth.authentication import token_required, get_current_user
 from datetime import datetime, timedelta
 import random
 
@@ -11,9 +12,15 @@ dashboard_bp = Blueprint('dashboard', __name__)
 
 
 @dashboard_bp.route('/api/analytics/dashboard/<customer_id>')
+@token_required
 def get_analytics_dashboard(customer_id):
     """Advanced Analytics Dashboard API"""
     try:
+        current_user = get_current_user()
+        # Check user authorization - assuming customer_id maps to user's account access
+        if not current_user:
+            return jsonify({"success": False, "error": "Unauthorized"}), 403
+            
         # Mock data for analytics dashboard
         return jsonify({
             "success": True,
@@ -69,9 +76,15 @@ def get_analytics_dashboard(customer_id):
 
 
 @dashboard_bp.route('/api/budget-pacing/summary/<customer_id>')
+@token_required
 def get_budget_pacing_summary(customer_id):
     """Budget Pacing Dashboard API"""
     try:
+        current_user = get_current_user()
+        # Check user authorization - assuming customer_id maps to user's account access
+        if not current_user:
+            return jsonify({"success": False, "error": "Unauthorized"}), 403
+            
         # Mock campaign budget data
         campaigns = []
         for i in range(5):
@@ -116,9 +129,15 @@ def get_budget_pacing_summary(customer_id):
 
 
 @dashboard_bp.route('/api/performance/summary/<customer_id>')
+@token_required
 def get_performance_summary(customer_id):
     """Performance Optimization Dashboard API"""
     try:
+        current_user = get_current_user()
+        # Check user authorization - assuming customer_id maps to user's account access
+        if not current_user:
+            return jsonify({"success": False, "error": "Unauthorized"}), 403
+            
         return jsonify({
             "success": True,
             "data": {
@@ -179,9 +198,15 @@ def get_performance_summary(customer_id):
 
 
 @dashboard_bp.route('/api/monitoring/status/<customer_id>')
+@token_required
 def get_monitoring_status(customer_id):
     """Real-Time Monitoring Dashboard API"""
     try:
+        current_user = get_current_user()
+        # Check user authorization - assuming customer_id maps to user's account access
+        if not current_user:
+            return jsonify({"success": False, "error": "Unauthorized"}), 403
+            
         return jsonify({
             "success": True,
             "data": {
@@ -260,9 +285,14 @@ def get_monitoring_status(customer_id):
 
 # Optimization actions endpoint
 @dashboard_bp.route('/api/performance/apply-optimization', methods=['POST'])
+@token_required
 def apply_optimization():
     """Apply performance optimization recommendation"""
     try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"success": False, "error": "Unauthorized"}), 403
+            
         data = request.get_json()
         recommendation_id = data.get('recommendation_id')
         auto_apply = data.get('auto_apply', False)
@@ -279,9 +309,14 @@ def apply_optimization():
 
 # Budget control endpoint
 @dashboard_bp.route('/api/budget-pacing/control-campaign', methods=['POST'])
+@token_required
 def control_campaign():
     """Pause/resume campaign for budget control"""
     try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"success": False, "error": "Unauthorized"}), 403
+            
         data = request.get_json()
         campaign_id = data.get('campaign_id')
         action = data.get('action')  # 'pause' or 'resume'
@@ -297,9 +332,14 @@ def control_campaign():
 
 # Issue resolution endpoint
 @dashboard_bp.route('/api/monitoring/resolve-issue', methods=['POST'])
+@token_required
 def resolve_issue():
     """Resolve monitoring issue"""
     try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"success": False, "error": "Unauthorized"}), 403
+            
         data = request.get_json()
         issue_id = data.get('issue_id')
         resolution = data.get('resolution')

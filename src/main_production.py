@@ -19,30 +19,20 @@ from flask_session import Session
 
 # Import configuration
 from src.config.settings import settings
-from src.config.redis_config import redis_client, get_flask_session_config
-from src.config.database import get_database_config
+from src.config.database import db, init_db
 
 # Import database and models
-from database import db, init_database
+from src.config.database import db, init_database
 
 # Import API blueprints
 from src.routes.user import user_bp
 from src.routes.ai_agent import ai_agent_bp
 from src.routes.google_ads import google_ads_bp
 from src.routes.campaigns import campaigns_bp
-from dashboard_apis import dashboard_bp
-
-# Import new service APIs
-from src.api.budget_pacing_api import budget_pacing_bp
-from src.api.health_api import health_bp
-from src.api.orchestrator_api import orchestrator_bp
-from src.api.auth_api import auth_bp
+from src.routes.health import health_bp
+from src.api.dashboard_apis import dashboard_bp
 
 # Import services
-from src.services.budget_pacing import budget_pacing_service
-from src.services.health_monitor import health_monitor
-from src.services.analytics_engine import analytics_engine
-from src.services.approval_workflow import approval_workflow
 from src.services.campaign_orchestrator import CampaignOrchestrator
 from src.services.real_google_ads import real_google_ads_service
 
@@ -52,32 +42,20 @@ from src.auth.authentication import token_required
 
 def create_app() -> Flask:
     """Application factory"""
-    app = Flask(__name__, 
+    app = Flask(__name__,
                 static_folder=os.path.join(os.path.dirname(__file__), 'static'),
                 instance_relative_config=True)
     
-    # Load configuration
-    app.config.update(settings.get_flask_config())
-    
-    # Load database configuration
-    db_config = get_database_config(settings.database.url)
-    app.config.update(db_config)
-    
-    # Configure Redis sessions if available
-    if settings.is_redis_configured():
-        try:
-            if redis_client.ping():
-                app.config.update(get_flask_session_config())
-                Session(app)
-                logging.info("Redis sessions enabled")
-        except Exception as e:
-            logging.warning(f"Redis not available, using default sessions: {e}")
+    # Basic configuration
+    app.config['SECRET_KEY'] = settings.security.secret_key
+    app.config['SQLALCHEMY_DATABASE_URI'] = settings.get_database_url()
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # Enable CORS
-    CORS(app, origins=settings.app.cors_origins.split(','))
+    CORS(app, origins=settings.security.cors_origins)
     
     # Initialize database
-    init_database(app)
+    db.init_app(app)
     
     # Initialize Flask-Migrate for database migrations
     migrate = Migrate(app, db)
@@ -102,20 +80,15 @@ def create_app() -> Flask:
 
 def register_blueprints(app: Flask):
     """Register all API blueprints"""
-    # Authentication (no prefix)
-    app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    # Health checks (no prefix for basic health)
+    app.register_blueprint(health_bp)
     
     # Core APIs
     app.register_blueprint(user_bp, url_prefix='/api/users')
     app.register_blueprint(ai_agent_bp, url_prefix='/api/ai')
     app.register_blueprint(google_ads_bp, url_prefix='/api/google-ads')
     app.register_blueprint(campaigns_bp, url_prefix='/api/campaigns')
-    app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
-    
-    # Service APIs
-    app.register_blueprint(budget_pacing_bp, url_prefix='/api/budget')
-    app.register_blueprint(health_bp, url_prefix='/api/health')
-    app.register_blueprint(orchestrator_bp, url_prefix='/api/orchestrator')
+    app.register_blueprint(dashboard_bp)  # Dashboard APIs have their own /api prefix
 
 
 def initialize_services(app: Flask):
@@ -125,21 +98,11 @@ def initialize_services(app: Flask):
             # Initialize database tables
             db.create_all()
             
-            # Start services in background
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            
-            # Start budget monitoring
-            if settings.app.environment != 'testing':
-                loop.run_until_complete(budget_pacing_service.start_monitoring())
-                loop.run_until_complete(analytics_engine.start_monitoring())
-                loop.run_until_complete(approval_workflow.start_monitoring())
-                
-                # Initialize campaign orchestrator
+            # Initialize campaign orchestrator
+            if settings.environment != 'testing':
                 global campaign_orchestrator
                 campaign_orchestrator = CampaignOrchestrator(real_google_ads_service)
-                
-                logging.info("All services initialized successfully")
+                logging.info("Campaign orchestrator initialized successfully")
             
         except Exception as e:
             logging.error(f"Error initializing services: {str(e)}")
@@ -227,7 +190,7 @@ def register_frontend_routes(app: Flask):
 
 def setup_logging():
     """Setup application logging"""
-    log_level = getattr(logging, settings.app.log_level.upper())
+    log_level = getattr(logging, settings.logging.level.upper())
     
     # Create logs directory if it doesn't exist
     log_dir = Path("logs")
@@ -236,7 +199,7 @@ def setup_logging():
     # Configure logging
     logging.basicConfig(
         level=log_level,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        format=settings.logging.format,
         handlers=[
             logging.FileHandler(log_dir / "app.log"),
             logging.StreamHandler(sys.stdout)
@@ -252,31 +215,20 @@ def setup_logging():
 
 def validate_environment():
     """Validate environment configuration"""
-    errors = []
+    validation_result = settings.validate_required_settings()
     
-    # Check Google Ads configuration
-    if not settings.is_google_ads_configured():
-        if settings.environment == 'production':
-            errors.append("Google Ads API configuration is required in production")
-        else:
-            logging.warning("Google Ads API not configured - some features will be limited")
+    # Log warnings
+    for warning in validation_result['warnings']:
+        logging.warning(warning)
     
-    # Check database configuration
-    if settings.environment == 'production' and 'sqlite' in settings.database.url:
-        errors.append("SQLite is not recommended for production - use PostgreSQL")
-    
-    # Check security settings
-    if settings.environment == 'production':
-        if settings.security.secret_key == 'your-secret-key-change-in-production':
-            errors.append("SECRET_KEY must be changed in production")
-        if settings.security.jwt_secret_key == 'your-jwt-secret-key-change-in-production':
-            errors.append("JWT_SECRET_KEY must be changed in production")
-    
-    if errors:
+    # Handle errors
+    if validation_result['errors']:
         logging.error("Environment validation failed:")
-        for error in errors:
-            logging.error(f"  - {error}")
-        if settings.environment == 'production':
+        for category, error_list in validation_result['errors'].items():
+            for error in error_list:
+                logging.error(f"  - {category}: {error}")
+        
+        if settings.is_production:
             sys.exit(1)
 
 
@@ -300,9 +252,9 @@ if __name__ == '__main__':
     # Run application
     try:
         app.run(
-            host=settings.app.host,
-            port=settings.app.port,
-            debug=settings.app.debug,
+            host=settings.server.host,
+            port=settings.server.port,
+            debug=settings.server.debug,
             threaded=True
         )
     except KeyboardInterrupt:
@@ -311,11 +263,4 @@ if __name__ == '__main__':
         logging.error(f"Application startup failed: {str(e)}")
         sys.exit(1)
     finally:
-        # Cleanup services
-        if 'budget_pacing_service' in globals():
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(budget_pacing_service.stop_monitoring())
-            loop.run_until_complete(analytics_engine.stop_monitoring())
-            loop.run_until_complete(approval_workflow.stop_monitoring())
-        
         logging.info("Application shutdown complete")

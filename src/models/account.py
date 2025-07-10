@@ -4,7 +4,7 @@ Enables management of multiple Google Ads accounts with proper isolation
 """
 
 from datetime import datetime
-from database import db
+from src.config.database import db
 from enum import Enum
 
 

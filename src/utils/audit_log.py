@@ -8,7 +8,7 @@ from enum import Enum
 import uuid
 import json
 
-from src.database import db
+from src.config.database import db
 
 class AuditAction(Enum):
     """Types of auditable actions"""
@@ -102,7 +102,10 @@ class AuditLog(db.Model):
     
     # Timestamp
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
-    
+
+    # Relationships
+    user = db.relationship('User', backref='audit_logs', lazy='select')
+
     def __init__(self, action, description, **kwargs):
         self.action = action
         self.description = description

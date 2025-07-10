@@ -1,236 +1,369 @@
 # Lane MCP - Google Ads Automation Platform
 
-**Production-ready AI-powered Google Ads automation platform** that transforms campaign briefs into fully managed Google Ads campaigns with ML-driven optimization.
+A production-ready AI-powered system that transforms campaign briefs into fully managed Google Ads campaigns with ML-driven optimization.
 
-## 🚀 Features
+## 🚀 Recent Critical Fixes Applied
 
-### Core Capabilities
-- **AI-Powered Campaign Creation**: Convert natural language briefs into complete Google Ads campaigns
-- **ML Budget Pacing**: Intelligent budget allocation with adaptive, conservative, and accelerated strategies
-- **Real-Time Monitoring**: Health checks and performance tracking every 2 hours
-- **Multi-Account Management**: Enterprise-grade multi-tenant architecture with role-based access
-- **Approval Workflows**: Automated approval processes with customizable rules
-- **Advanced Analytics**: Time-series forecasting and performance predictions
+### Authentication System Standardization
+- **Fixed**: Replaced inconsistent `flask_login` usage with JWT authentication across all dashboard APIs
+- **Impact**: Dashboard endpoints now properly authenticate using JWT tokens
+- **Files**: `src/api/dashboard_apis.py`
 
-### Technical Features
-- **Production Authentication**: JWT-based auth with bcrypt password hashing
-- **Database Support**: PostgreSQL (production) and SQLite (development)
-- **Redis Integration**: Session management, caching, and rate limiting
-- **Google Ads API v15**: Full integration with real API (no mocks)
-- **RESTful APIs**: Complete API suite for all platform features
-- **Background Services**: Asynchronous monitoring and optimization
+### Environment Configuration
+- **Fixed**: Replaced hardcoded localhost URLs with environment-based configuration
+- **Added**: Comprehensive environment configuration system
+- **Files**: `src/config/environment.js`, `.env.development`, `.env.production`, `.env`
 
-## 📋 Prerequisites
+### Missing Service Dependencies
+- **Fixed**: Created proper AI Agent service class to replace Blueprint-based implementation
+- **Fixed**: Resolved campaign orchestrator import issues
+- **Files**: `src/services/ai_agent_service.py`, route imports
 
+### Database Model Integration
+- **Fixed**: Created missing Conversation model and integrated with database configuration
+- **Fixed**: Resolved circular import issues
+- **Files**: `src/models/conversation.py`, `src/config/database.py`
+
+### Configuration Management
+- **Added**: Centralized settings system with validation and environment support
+- **Added**: Comprehensive environment variable templates
+- **Files**: `src/config/settings.py`, `.env.example`
+
+## 🏗️ Architecture Overview
+
+### Backend (Python/Flask)
+- **Framework**: Flask with Blueprint architecture
+- **Database**: SQLAlchemy ORM (PostgreSQL/SQLite)
+- **Authentication**: JWT-based with bcrypt password hashing
+- **APIs**: RESTful APIs with comprehensive error handling
+- **Services**: Modular service architecture for Google Ads, AI, and orchestration
+
+### Frontend (React/Vite)
+- **Framework**: React with modern hooks and functional components
+- **Build Tool**: Vite for fast development and optimized builds
+- **Styling**: Inline styles with glassmorphism design
+- **State Management**: React hooks with context for global state
+
+### External Integrations
+- **Google Ads API**: Real API integration with v15
+- **OpenAI API**: GPT-4 for campaign generation and chat
+- **Redis**: Session management and caching (optional)
+
+## 📁 Project Structure
+
+```
+lane_google/
+├── README.md                    # Main documentation
+├── .gitignore                   # Git ignore rules
+├── src/                         # Main application source code
+│   ├── api/                     # API endpoints and handlers
+│   ├── auth/                    # Authentication modules
+│   ├── components/              # React components
+│   ├── config/                  # Application configuration
+│   ├── models/                  # Database models
+│   ├── routes/                  # Flask route blueprints
+│   ├── services/                # Business logic services
+│   ├── utils/                   # Utility functions
+│   └── main_production.py       # Production entry point
+├── config/                      # Configuration files
+│   ├── env/                     # Environment configurations
+│   │   ├── .env.development     # Development environment
+│   │   ├── .env.production      # Production environment
+│   │   └── .env.example         # Environment template
+│   ├── linting/                 # Code quality configurations
+│   │   ├── .editorconfig        # Editor configuration
+│   │   ├── .flake8              # Python linting
+│   │   ├── .prettierrc          # JavaScript formatting
+│   │   └── pyproject.toml       # Python project configuration
+│   ├── requirements.txt         # Python dependencies
+│   └── Makefile                 # Build automation
+├── docker/                      # Docker configuration
+│   ├── docker-compose.yml       # Multi-container setup
+│   └── Dockerfile               # Container definition
+├── frontend/                    # Frontend application
+│   ├── src/                     # React source code
+│   ├── index.html               # HTML entry point
+│   ├── package.json             # Node.js dependencies
+│   ├── package-lock.json        # Dependency lock file
+│   └── vite.config.js           # Vite configuration
+├── scripts/                     # Automation scripts
+│   ├── quick_start.py           # Quick setup script
+│   ├── setup_production.sh      # Production setup
+│   └── start_server.sh          # Server startup
+├── docs/                        # Documentation
+│   ├── QUICK_START.md           # Quick start guide
+│   ├── STARTUP_GUIDE.md         # Detailed startup guide
+│   └── PRODUCTION_SETUP_CHECKLIST.md # Production checklist
+└── migrations/                  # Database migrations
+    ├── postgres/                # PostgreSQL migrations
+    └── run_migrations.py        # Migration runner
+```
+
+## 🛠️ Setup Instructions
+
+### Prerequisites
 - Python 3.8+
-- PostgreSQL 12+ (for production)
-- Redis 6+ (recommended for production)
-- Google Ads API credentials
-- Node.js 14+ (for frontend)
+- Node.js 16+
+- PostgreSQL (for production) or SQLite (for development)
+- Redis (optional, for caching)
 
-## 🛠️ Quick Start
+### Backend Setup
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/yourusername/lane_google.git
-cd lane_google
-```
+1. **Clone and navigate to the project**
+   ```bash
+   cd lane_google
+   ```
 
-### 2. Run Setup Script
-```bash
-chmod +x setup_production.sh
-./setup_production.sh
-```
+2. **Create Python virtual environment**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
-This script will:
-- Create a Python virtual environment
-- Install all dependencies
-- Set up the database
-- Create configuration files
-- Run initial migrations
+3. **Install Python dependencies**
+   ```bash
+   pip install -r config/requirements.txt
+   ```
 
-### 3. Configure Environment
+4. **Configure environment variables**
+   ```bash
+   cp config/env/.env.example .env
+   # Edit .env with your actual API keys and configuration
+   ```
 
-Edit `.env` file with your credentials:
+5. **Initialize database**
+   ```bash
+   python -c "from src.config.database import init_db; init_db()"
+   ```
+
+6. **Run the backend server**
+   ```bash
+   # Development
+   python src/main.py
+   
+   # Production
+   python src/main_production.py
+   ```
+
+### Frontend Setup
+
+1. **Navigate to frontend directory**
+   ```bash
+   cd frontend
+   ```
+
+2. **Install Node.js dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Configure environment variables**
+   ```bash
+   # Copy and edit environment files
+   cp ../config/env/.env.development .env.local
+   # Edit .env.local with your backend URL
+   ```
+
+4. **Run the frontend development server**
+   ```bash
+   npm run dev
+   ```
+
+5. **Build for production**
+   ```bash
+   npm run build
+   ```
+
+## 🔧 Configuration
+
+### Required Environment Variables
+
+#### Google Ads API (Required for production)
 ```env
-# Google Ads API (Required)
 GOOGLE_ADS_CLIENT_ID=your-client-id
 GOOGLE_ADS_CLIENT_SECRET=your-client-secret
 GOOGLE_ADS_REFRESH_TOKEN=your-refresh-token
 GOOGLE_ADS_DEVELOPER_TOKEN=your-developer-token
-GOOGLE_ADS_CUSTOMER_ID=your-customer-id
+```
 
-# Security (Change these!)
-SECRET_KEY=generate-a-secure-random-key
-JWT_SECRET_KEY=generate-another-secure-key
+#### OpenAI API (Required for AI features)
+```env
+OPENAI_API_KEY=your-openai-api-key
+```
 
-# Database (for production)
+#### Security (Required for production)
+```env
+SECRET_KEY=your-secure-secret-key
+JWT_SECRET_KEY=your-jwt-secret-key
+```
+
+#### Database (Production)
+```env
 DATABASE_URL=postgresql://user:password@localhost:5432/lane_mcp
+```
 
-# Redis (optional but recommended)
+### Optional Configuration
+
+#### Redis (for caching and sessions)
+```env
 REDIS_URL=redis://localhost:6379/0
 ```
 
-### 4. Run the Application
+#### Feature Flags
+```env
+FEATURE_AI_CHAT=true
+FEATURE_REAL_TIME_MONITORING=true
+FEATURE_AUTO_OPTIMIZATION=true
+FEATURE_WORKFLOW_APPROVAL=true
+```
+
+## 🚦 API Endpoints
+
+### Authentication
+- `POST /api/auth/login` - User login
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/refresh` - Token refresh
+
+### Dashboard APIs (JWT Protected)
+- `GET /api/analytics/dashboard/{customer_id}` - Analytics dashboard data
+- `GET /api/budget-pacing/summary/{customer_id}` - Budget pacing information
+- `GET /api/performance/summary/{customer_id}` - Performance optimization data
+- `GET /api/monitoring/status/{customer_id}` - Real-time monitoring status
+
+### Campaign Management
+- `GET /api/campaigns` - List campaigns
+- `POST /api/campaigns/create` - Create new campaign
+- `GET /api/campaigns/{campaign_id}` - Get campaign details
+
+### AI Agent
+- `POST /api/ai/chat` - Chat with AI agent
+- `POST /api/ai/generate-campaign` - Generate campaign brief
+
+### Google Ads Integration
+- `GET /api/google-ads/accounts` - List accessible accounts
+- `GET /api/google-ads/accounts/{account_id}/campaigns` - Get account campaigns
+
+## 🔍 Development Mode
+
+The application includes comprehensive development features:
+
+### Mock Data
+- Google Ads API calls use mock data when credentials aren't configured
+- AI responses can be mocked for testing without OpenAI API usage
+
+### Debug Features
+- Detailed logging with configurable levels
+- Database query logging (set `DATABASE_ECHO=true`)
+- Request/response logging for API debugging
+
+### Auto-Setup
+- Automatic database initialization
+- Default admin user creation in development
+- Sample data generation for testing
+
+## 🚀 Production Deployment
+
+### Docker Deployment (Recommended)
 ```bash
-# Activate virtual environment
-source venv/bin/activate
+# Build and run with Docker Compose
+cd docker && docker-compose up --build
+```
 
-# Run in development mode
-python main_production.py
+### Manual Deployment
+1. Set `ENVIRONMENT=production` in `.env`
+2. Configure production database (PostgreSQL recommended)
+3. Set secure secret keys
+4. Configure Google Ads and OpenAI API credentials
+5. Use a production WSGI server (Gunicorn recommended)
 
-# Or run with gunicorn (production)
-gunicorn -w 4 -b 0.0.0.0:5000 main_production:app
+```bash
+gunicorn -w 4 -b 0.0.0.0:5000 src.main_production:app
 ```
 
 ## 🧪 Testing
 
-### Local Testing
-1. The application runs on `http://localhost:5000` by default
-2. API documentation is available at `/api/docs`
-3. Health check endpoint: `/api/health`
-
-### Create Test Campaign
+### Backend Tests
 ```bash
-# Get auth token
-curl -X POST http://localhost:5000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email": "admin@example.com", "password": "your-password"}'
-
-# Create campaign brief
-curl -X POST http://localhost:5000/api/campaigns/brief \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "business_type": "E-commerce Fashion",
-    "target_audience": "Women 25-45 interested in sustainable fashion",
-    "budget": 5000,
-    "goals": "Increase online sales by 30%"
-  }'
+python -m pytest tests/
 ```
 
-## 🚀 Production Deployment
-
-### Database Setup (PostgreSQL)
+### Frontend Tests
 ```bash
-# Create database
-createdb lane_mcp
-
-# Run migrations
-python migrations/run_migrations.py migrate
+npm test
 ```
 
-### Redis Setup
+### Integration Tests
 ```bash
-# Install Redis
-sudo apt-get install redis-server
-
-# Start Redis
-redis-server
+npm run test:integration
 ```
 
-### Environment Variables
-Ensure all production environment variables are set:
-- Use strong, unique keys for `SECRET_KEY` and `JWT_SECRET_KEY`
-- Set `FLASK_ENV=production`
-- Configure proper database connection string
-- Set up email configuration for notifications
+## 📊 Monitoring and Logging
 
-### Deployment Options
-
-#### Option 1: Docker
-```bash
-docker build -t lane-mcp .
-docker run -p 5000:5000 --env-file .env lane-mcp
-```
-
-#### Option 2: Systemd Service
-Create `/etc/systemd/system/lane-mcp.service`:
-```ini
-[Unit]
-Description=Lane MCP Google Ads Platform
-After=network.target postgresql.service redis.service
-
-[Service]
-User=www-data
-WorkingDirectory=/path/to/lane_google
-Environment="PATH=/path/to/lane_google/venv/bin"
-ExecStart=/path/to/lane_google/venv/bin/gunicorn -w 4 -b 0.0.0.0:5000 main_production:app
-
-[Install]
-WantedBy=multi-user.target
-```
-
-#### Option 3: Cloud Platforms
-- **Heroku**: Use included `Procfile`
-- **AWS**: Deploy with Elastic Beanstalk or ECS
-- **Google Cloud**: Use App Engine or Cloud Run
-
-## 📊 Monitoring
+### Application Logs
+- Configurable log levels (DEBUG, INFO, WARNING, ERROR)
+- File-based logging with rotation
+- Structured logging for production monitoring
 
 ### Health Checks
-```bash
-# System health
-curl http://localhost:5000/api/health
+- `GET /health` - Application health status
+- `GET /api/health` - API health with service status
+- Database connectivity checks
+- External service availability checks
 
-# Detailed health
-curl http://localhost:5000/api/health?detailed=true
-```
+## 🔒 Security Features
 
-### Logs
-- Application logs: `logs/app.log`
-- Service logs: Check individual service endpoints
-- Database queries: Enable with `DATABASE_ECHO=true`
+### Authentication & Authorization
+- JWT-based authentication with configurable expiration
+- Bcrypt password hashing with configurable salt rounds
+- Role-based access control (RBAC)
+- Account-level access restrictions
 
-## 🔒 Security Notes
+### API Security
+- CORS configuration for cross-origin requests
+- Rate limiting (configurable)
+- Input validation and sanitization
+- SQL injection prevention through ORM
 
-1. **Always change default keys** in production
-2. **Use HTTPS** with proper SSL certificates
-3. **Enable rate limiting** for public endpoints
-4. **Regular security updates** for dependencies
-5. **Backup database** regularly
-
-## 📖 API Documentation
-
-### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login user
-- `POST /api/auth/logout` - Logout user
-- `GET /api/auth/profile` - Get user profile
-
-### Campaigns
-- `POST /api/campaigns/brief` - Create campaign from brief
-- `GET /api/campaigns` - List campaigns
-- `GET /api/campaigns/{id}` - Get campaign details
-- `PUT /api/campaigns/{id}` - Update campaign
-- `POST /api/campaigns/{id}/launch` - Launch campaign
-
-### Analytics
-- `GET /api/analytics/campaigns/{id}` - Get campaign analytics
-- `GET /api/analytics/forecast/{id}` - Get performance forecast
-
-### Budget Management
-- `GET /api/budget/campaigns/{id}/status` - Get budget status
-- `POST /api/budget/campaigns/{id}/adjust` - Adjust budget pacing
+### Data Protection
+- Sensitive data encryption at rest
+- Secure session management
+- Environment variable protection
+- API key rotation support
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests
-5. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## 📄 License
+## 📝 License
 
-This project is licensed under the MIT License - see LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🆘 Support
 
-- Documentation: `/docs`
-- Issues: GitHub Issues
-- Email: support@lanemcp.com
+For support and questions:
+- Create an issue in the GitHub repository
+- Check the documentation in the `/docs` folder
+- Review the configuration examples in `.env.example`
 
----
+## 🔄 Version History
 
-**Built with ❤️ for Google Ads automation**
+### v1.0.0 (Current)
+- ✅ Fixed critical authentication inconsistencies
+- ✅ Implemented environment-based configuration
+- ✅ Resolved missing service dependencies
+- ✅ Added comprehensive error handling
+- ✅ Created production-ready deployment configuration
+- ✅ Standardized API response formats
+- ✅ Added health check endpoints
+- ✅ Implemented proper logging system
+
+### Next Planned Features
+- [ ] Unit and integration test coverage
+- [ ] API documentation with OpenAPI/Swagger
+- [ ] Performance monitoring and alerting
+- [ ] Advanced campaign optimization algorithms
+- [ ] Multi-tenant architecture support

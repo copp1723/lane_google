@@ -8,9 +8,9 @@ from datetime import datetime
 import psutil
 import os
 
-from src.config import config
+from src.config.config import config
 from src.services.ai_service import openrouter_client
-from src.database import db
+from src.config.database import db
 
 health_bp = Blueprint('health', __name__)
 

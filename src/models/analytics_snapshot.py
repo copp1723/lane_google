@@ -4,7 +4,7 @@ Stores time-series analytics data for campaigns
 """
 
 from datetime import datetime
-from database import db
+from src.config.database import db
 
 
 class AnalyticsSnapshot(db.Model):

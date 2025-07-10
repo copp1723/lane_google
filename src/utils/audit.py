@@ -8,7 +8,7 @@ from flask import g, request
 from typing import Callable, Any, Dict, Optional
 from datetime import datetime
 
-from src.models.audit_log import AuditLog, AuditAction
+from src.utils.audit_log import AuditLog, AuditAction
 
 
 def audit_action(action: AuditAction, description: Optional[str] = None):

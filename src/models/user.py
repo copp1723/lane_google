@@ -9,7 +9,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from enum import Enum
 import uuid
 
-from src.database import db
+from src.config.database import db
 
 class UserRole(Enum):
     """User roles for role-based access control"""
@@ -70,17 +70,21 @@ class User(db.Model):
     google_ads_refresh_token = db.Column(db.String(500), nullable=True)  # Encrypted
     
     # Relationships
-    campaigns = db.relationship('Campaign', backref='created_by_user', lazy='dynamic')
-    conversations = db.relationship('Conversation', backref='user', lazy='dynamic')
-    audit_logs = db.relationship('AuditLog', backref='user', lazy='dynamic')
+    campaigns = db.relationship('Campaign', backref='created_by_user', lazy='dynamic', foreign_keys='Campaign.created_by')
+    # Note: Conversation and AuditLog relationships are defined in their respective models to avoid circular imports
     
     def __init__(self, email, username, password, first_name, last_name, **kwargs):
         self.email = email.lower().strip()
         self.username = username.lower().strip()
         self.first_name = first_name.strip()
         self.last_name = last_name.strip()
+
+        # Generate salt if not provided
+        if not self.salt:
+            self.salt = str(uuid.uuid4())[:32]
+
         self.set_password(password)
-        
+
         # Set optional fields
         for key, value in kwargs.items():
             if hasattr(self, key):

@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass
 import numpy as np
-from database import db
+from src.config.database import db
 import json
 import asyncio
 

@@ -1,342 +1,219 @@
 """
-Environment Configuration Management
-Handles all environment variables and configuration settings
+Application Settings and Configuration
+Centralized configuration management with environment variable support
 """
 
 import os
-from typing import Dict, Any, Optional
-from dataclasses import dataclass
-import logging
-from pathlib import Path
+from typing import Optional, Dict, Any
+from dataclasses import dataclass, field
+from dotenv import load_dotenv
 
-logger = logging.getLogger(__name__)
+# Load environment variables
+load_dotenv()
 
 
 @dataclass
 class DatabaseConfig:
     """Database configuration"""
-    url: str
-    echo: bool = False
-    pool_size: int = 10
-    max_overflow: int = 20
-    pool_timeout: int = 30
-    pool_recycle: int = 3600
-
-
-@dataclass
-class RedisConfig:
-    """Redis configuration"""
-    url: str
-    host: str = "localhost"
-    port: int = 6379
-    password: Optional[str] = None
-    db: int = 0
-    decode_responses: bool = True
-
-
-@dataclass
-class GoogleAdsConfig:
-    """Google Ads API configuration"""
-    client_id: str
-    client_secret: str
-    refresh_token: str
-    developer_token: str
-    customer_id: Optional[str] = None
-    login_customer_id: Optional[str] = None
-
-
-@dataclass
-class EmailConfig:
-    """Email service configuration"""
-    smtp_host: str
-    smtp_port: int = 587
-    smtp_user: str
-    smtp_password: str
-    from_email: str
-    use_tls: bool = True
+    url: str = field(default_factory=lambda: os.getenv('DATABASE_URL', 'sqlite:///lane_mcp.db'))
+    echo: bool = field(default_factory=lambda: os.getenv('DATABASE_ECHO', 'False').lower() == 'true')
+    pool_size: int = field(default_factory=lambda: int(os.getenv('DATABASE_POOL_SIZE', '10')))
+    max_overflow: int = field(default_factory=lambda: int(os.getenv('DATABASE_MAX_OVERFLOW', '20')))
+    pool_timeout: int = field(default_factory=lambda: int(os.getenv('DATABASE_POOL_TIMEOUT', '30')))
+    pool_recycle: int = field(default_factory=lambda: int(os.getenv('DATABASE_POOL_RECYCLE', '3600')))
 
 
 @dataclass
 class SecurityConfig:
     """Security configuration"""
-    secret_key: str
-    jwt_secret_key: str
-    password_salt: str
-    session_lifetime_hours: int = 24
-    rate_limit_per_minute: int = 60
+    secret_key: str = field(default_factory=lambda: os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production'))
+    jwt_secret_key: str = field(default_factory=lambda: os.getenv('JWT_SECRET_KEY', 'jwt-secret-key-change-in-production'))
+    jwt_expiration_hours: int = field(default_factory=lambda: int(os.getenv('JWT_EXPIRATION_HOURS', '24')))
+    password_salt_rounds: int = field(default_factory=lambda: int(os.getenv('PASSWORD_SALT_ROUNDS', '12')))
+    cors_origins: list = field(default_factory=lambda: os.getenv('CORS_ORIGINS', '*').split(','))
 
 
 @dataclass
-class AppConfig:
-    """Main application configuration"""
-    environment: str
-    debug: bool
-    host: str = "0.0.0.0"
-    port: int = 5000
-    log_level: str = "INFO"
-    cors_origins: str = "*"
+class GoogleAdsConfig:
+    """Google Ads API configuration"""
+    client_id: Optional[str] = field(default_factory=lambda: os.getenv('GOOGLE_ADS_CLIENT_ID'))
+    client_secret: Optional[str] = field(default_factory=lambda: os.getenv('GOOGLE_ADS_CLIENT_SECRET'))
+    refresh_token: Optional[str] = field(default_factory=lambda: os.getenv('GOOGLE_ADS_REFRESH_TOKEN'))
+    developer_token: Optional[str] = field(default_factory=lambda: os.getenv('GOOGLE_ADS_DEVELOPER_TOKEN'))
+    login_customer_id: Optional[str] = field(default_factory=lambda: os.getenv('GOOGLE_ADS_LOGIN_CUSTOMER_ID'))
+    use_proto_plus: bool = field(default_factory=lambda: os.getenv('GOOGLE_ADS_USE_PROTO_PLUS', 'True').lower() == 'true')
 
 
-class Settings:
-    """Application settings manager"""
+@dataclass
+class OpenAIConfig:
+    """OpenAI API configuration"""
+    api_key: Optional[str] = field(default_factory=lambda: os.getenv('OPENAI_API_KEY'))
+    model: str = field(default_factory=lambda: os.getenv('OPENAI_MODEL', 'gpt-4'))
+    max_tokens: int = field(default_factory=lambda: int(os.getenv('OPENAI_MAX_TOKENS', '1000')))
+    temperature: float = field(default_factory=lambda: float(os.getenv('OPENAI_TEMPERATURE', '0.7')))
+
+
+@dataclass
+class RedisConfig:
+    """Redis configuration"""
+    url: str = field(default_factory=lambda: os.getenv('REDIS_URL', 'redis://localhost:6379/0'))
+    password: Optional[str] = field(default_factory=lambda: os.getenv('REDIS_PASSWORD'))
+    db: int = field(default_factory=lambda: int(os.getenv('REDIS_DB', '0')))
+    max_connections: int = field(default_factory=lambda: int(os.getenv('REDIS_MAX_CONNECTIONS', '10')))
+
+
+@dataclass
+class LoggingConfig:
+    """Logging configuration"""
+    level: str = field(default_factory=lambda: os.getenv('LOG_LEVEL', 'INFO'))
+    format: str = field(default_factory=lambda: os.getenv('LOG_FORMAT', '%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    file_path: Optional[str] = field(default_factory=lambda: os.getenv('LOG_FILE_PATH'))
+    max_file_size: int = field(default_factory=lambda: int(os.getenv('LOG_MAX_FILE_SIZE', '10485760')))  # 10MB
+    backup_count: int = field(default_factory=lambda: int(os.getenv('LOG_BACKUP_COUNT', '5')))
+
+
+@dataclass
+class ServerConfig:
+    """Server configuration"""
+    host: str = field(default_factory=lambda: os.getenv('HOST', '0.0.0.0'))
+    port: int = field(default_factory=lambda: int(os.getenv('PORT', '5000')))
+    debug: bool = field(default_factory=lambda: os.getenv('DEBUG', 'False').lower() == 'true')
+    workers: int = field(default_factory=lambda: int(os.getenv('WORKERS', '4')))
+    timeout: int = field(default_factory=lambda: int(os.getenv('TIMEOUT', '30')))
+
+
+@dataclass
+class FeatureFlags:
+    """Feature flags configuration"""
+    ai_chat_enabled: bool = field(default_factory=lambda: os.getenv('FEATURE_AI_CHAT', 'True').lower() == 'true')
+    real_time_monitoring: bool = field(default_factory=lambda: os.getenv('FEATURE_REAL_TIME_MONITORING', 'True').lower() == 'true')
+    auto_optimization: bool = field(default_factory=lambda: os.getenv('FEATURE_AUTO_OPTIMIZATION', 'True').lower() == 'true')
+    workflow_approval: bool = field(default_factory=lambda: os.getenv('FEATURE_WORKFLOW_APPROVAL', 'True').lower() == 'true')
+    performance_analytics: bool = field(default_factory=lambda: os.getenv('FEATURE_PERFORMANCE_ANALYTICS', 'True').lower() == 'true')
+
+
+@dataclass
+class ApplicationSettings:
+    """Main application settings"""
+    environment: str = field(default_factory=lambda: os.getenv('ENVIRONMENT', 'development'))
+    app_name: str = field(default_factory=lambda: os.getenv('APP_NAME', 'Lane MCP'))
+    app_version: str = field(default_factory=lambda: os.getenv('APP_VERSION', '1.0.0'))
     
-    def __init__(self):
-        self.environment = os.getenv('FLASK_ENV', 'development')
-        self.debug = self.environment == 'development'
+    # Configuration sections
+    database: DatabaseConfig = field(default_factory=DatabaseConfig)
+    security: SecurityConfig = field(default_factory=SecurityConfig)
+    google_ads: GoogleAdsConfig = field(default_factory=GoogleAdsConfig)
+    openai: OpenAIConfig = field(default_factory=OpenAIConfig)
+    redis: RedisConfig = field(default_factory=RedisConfig)
+    logging: LoggingConfig = field(default_factory=LoggingConfig)
+    server: ServerConfig = field(default_factory=ServerConfig)
+    features: FeatureFlags = field(default_factory=FeatureFlags)
+    
+    @property
+    def is_development(self) -> bool:
+        """Check if running in development mode"""
+        return self.environment.lower() in ['development', 'dev', 'local']
+    
+    @property
+    def is_production(self) -> bool:
+        """Check if running in production mode"""
+        return self.environment.lower() in ['production', 'prod']
+    
+    @property
+    def is_testing(self) -> bool:
+        """Check if running in testing mode"""
+        return self.environment.lower() in ['testing', 'test']
+    
+    def validate_required_settings(self) -> Dict[str, list]:
+        """Validate that required settings are present"""
+        errors = {}
+        warnings = []
         
-        # Load environment-specific settings
-        self._load_env_file()
-        
-        # Initialize configurations
-        self.app = self._load_app_config()
-        self.database = self._load_database_config()
-        self.redis = self._load_redis_config()
-        self.google_ads = self._load_google_ads_config()
-        self.email = self._load_email_config()
-        self.security = self._load_security_config()
-        
-        # Validate critical settings
-        self._validate_settings()
-    
-    def _load_env_file(self):
-        """Load environment-specific .env file"""
-        env_files = [
-            f'.env.{self.environment}',
-            '.env.local',
-            '.env'
-        ]
-        
-        for env_file in env_files:
-            if os.path.exists(env_file):
-                self._load_dotenv(env_file)
-                logger.info(f"Loaded environment file: {env_file}")
-                break
-    
-    def _load_dotenv(self, file_path: str):
-        """Load variables from .env file"""
-        try:
-            with open(file_path, 'r') as f:
-                for line in f:
-                    line = line.strip()
-                    if line and not line.startswith('#') and '=' in line:
-                        key, value = line.split('=', 1)
-                        os.environ.setdefault(key.strip(), value.strip())
-        except Exception as e:
-            logger.warning(f"Could not load {file_path}: {str(e)}")
-    
-    def _load_app_config(self) -> AppConfig:
-        """Load application configuration"""
-        return AppConfig(
-            environment=self.environment,
-            debug=self.debug,
-            host=os.getenv('HOST', '0.0.0.0'),
-            port=int(os.getenv('PORT', 5000)),
-            log_level=os.getenv('LOG_LEVEL', 'INFO'),
-            cors_origins=os.getenv('CORS_ORIGINS', '*')
-        )
-    
-    def _load_database_config(self) -> DatabaseConfig:
-        """Load database configuration"""
-        # Default to PostgreSQL in production, SQLite in development
-        if self.environment == 'production':
-            default_url = os.getenv('DATABASE_URL', 'postgresql://user:pass@localhost/lane_mcp')
-        else:
-            default_url = f"sqlite:///{Path(__file__).parent.parent.parent}/database/app.db"
-        
-        return DatabaseConfig(
-            url=os.getenv('DATABASE_URL', default_url),
-            echo=os.getenv('DATABASE_ECHO', 'false').lower() == 'true',
-            pool_size=int(os.getenv('DATABASE_POOL_SIZE', 10)),
-            max_overflow=int(os.getenv('DATABASE_MAX_OVERFLOW', 20)),
-            pool_timeout=int(os.getenv('DATABASE_POOL_TIMEOUT', 30)),
-            pool_recycle=int(os.getenv('DATABASE_POOL_RECYCLE', 3600))
-        )
-    
-    def _load_redis_config(self) -> Optional[RedisConfig]:
-        """Load Redis configuration"""
-        redis_url = os.getenv('REDIS_URL')
-        if not redis_url:
-            # Try individual components
-            redis_host = os.getenv('REDIS_HOST')
-            if not redis_host:
-                return None
+        # Check critical settings
+        if self.is_production:
+            if self.security.secret_key == 'dev-secret-key-change-in-production':
+                errors.setdefault('security', []).append('SECRET_KEY must be set in production')
             
-            redis_url = f"redis://{redis_host}:{os.getenv('REDIS_PORT', 6379)}"
+            if self.security.jwt_secret_key == 'jwt-secret-key-change-in-production':
+                errors.setdefault('security', []).append('JWT_SECRET_KEY must be set in production')
         
-        return RedisConfig(
-            url=redis_url,
-            host=os.getenv('REDIS_HOST', 'localhost'),
-            port=int(os.getenv('REDIS_PORT', 6379)),
-            password=os.getenv('REDIS_PASSWORD'),
-            db=int(os.getenv('REDIS_DB', 0)),
-            decode_responses=True
-        )
-    
-    def _load_google_ads_config(self) -> Optional[GoogleAdsConfig]:
-        """Load Google Ads API configuration"""
-        client_id = os.getenv('GOOGLE_ADS_CLIENT_ID')
-        if not client_id:
-            return None
+        # Check Google Ads configuration
+        if not self.google_ads.client_id:
+            warnings.append('Google Ads client ID not configured - Google Ads features will be disabled')
         
-        return GoogleAdsConfig(
-            client_id=client_id,
-            client_secret=os.getenv('GOOGLE_ADS_CLIENT_SECRET', ''),
-            refresh_token=os.getenv('GOOGLE_ADS_REFRESH_TOKEN', ''),
-            developer_token=os.getenv('GOOGLE_ADS_DEVELOPER_TOKEN', ''),
-            customer_id=os.getenv('GOOGLE_ADS_CUSTOMER_ID'),
-            login_customer_id=os.getenv('GOOGLE_ADS_LOGIN_CUSTOMER_ID')
-        )
-    
-    def _load_email_config(self) -> Optional[EmailConfig]:
-        """Load email configuration"""
-        smtp_host = os.getenv('SMTP_HOST')
-        if not smtp_host:
-            return None
+        if not self.google_ads.developer_token:
+            warnings.append('Google Ads developer token not configured - Google Ads features will be disabled')
         
-        return EmailConfig(
-            smtp_host=smtp_host,
-            smtp_port=int(os.getenv('SMTP_PORT', 587)),
-            smtp_user=os.getenv('SMTP_USER', ''),
-            smtp_password=os.getenv('SMTP_PASSWORD', ''),
-            from_email=os.getenv('FROM_EMAIL', ''),
-            use_tls=os.getenv('SMTP_USE_TLS', 'true').lower() == 'true'
-        )
-    
-    def _load_security_config(self) -> SecurityConfig:
-        """Load security configuration"""
-        return SecurityConfig(
-            secret_key=os.getenv('SECRET_KEY', 'dev-key-change-in-production'),
-            jwt_secret_key=os.getenv('JWT_SECRET_KEY', 'jwt-dev-key-change-in-production'),
-            password_salt=os.getenv('PASSWORD_SALT', 'salt-change-in-production'),
-            session_lifetime_hours=int(os.getenv('SESSION_LIFETIME_HOURS', 24)),
-            rate_limit_per_minute=int(os.getenv('RATE_LIMIT_PER_MINUTE', 60))
-        )
-    
-    def _validate_settings(self):
-        """Validate critical settings"""
-        errors = []
+        # Check OpenAI configuration
+        if not self.openai.api_key:
+            warnings.append('OpenAI API key not configured - AI features will be disabled')
         
-        # Production validations
-        if self.environment == 'production':
-            if self.security.secret_key == 'dev-key-change-in-production':
-                errors.append("SECRET_KEY must be changed in production")
-            
-            if not self.database.url.startswith(('postgresql://', 'mysql://')):
-                errors.append("Production requires PostgreSQL or MySQL database")
-            
-            if not self.google_ads:
-                errors.append("Google Ads configuration required in production")
-            elif not all([
-                self.google_ads.client_id,
-                self.google_ads.client_secret,
-                self.google_ads.refresh_token,
-                self.google_ads.developer_token
-            ]):
-                errors.append("Incomplete Google Ads configuration")
-        
-        # General validations
-        if not self.security.secret_key:
-            errors.append("SECRET_KEY is required")
-        
-        if errors:
-            for error in errors:
-                logger.error(f"Configuration error: {error}")
-            raise ValueError(f"Configuration validation failed: {'; '.join(errors)}")
-        
-        logger.info(f"Configuration validated for {self.environment} environment")
+        return {
+            'errors': errors,
+            'warnings': warnings
+        }
     
     def get_database_url(self) -> str:
-        """Get database URL with proper formatting"""
+        """Get database URL with fallback logic"""
+        if self.database.url.startswith('sqlite:'):
+            # Ensure SQLite directory exists
+            import os
+            db_path = self.database.url.replace('sqlite:///', '').replace('sqlite://', '')
+            if db_path and '/' in db_path:
+                os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        
         return self.database.url
     
-    def get_redis_url(self) -> Optional[str]:
-        """Get Redis URL"""
-        return self.redis.url if self.redis else None
-    
-    def is_google_ads_configured(self) -> bool:
-        """Check if Google Ads is properly configured"""
-        return (self.google_ads is not None and 
-                all([
-                    self.google_ads.client_id,
-                    self.google_ads.client_secret,
-                    self.google_ads.refresh_token,
-                    self.google_ads.developer_token
-                ]))
-    
-    def get_google_ads_config_dict(self) -> Dict[str, str]:
-        """Get Google Ads config as dictionary for API client"""
-        if not self.google_ads:
-            raise ValueError("Google Ads not configured")
-        
-        config = {
-            'client_id': self.google_ads.client_id,
-            'client_secret': self.google_ads.client_secret,
-            'refresh_token': self.google_ads.refresh_token,
-            'developer_token': self.google_ads.developer_token,
-        }
-        
-        if self.google_ads.customer_id:
-            config['customer_id'] = self.google_ads.customer_id
-        if self.google_ads.login_customer_id:
-            config['login_customer_id'] = self.google_ads.login_customer_id
-        
-        return config
-    
-    def get_flask_config(self) -> Dict[str, Any]:
-        """Get Flask configuration dictionary"""
-        config = {
-            'SECRET_KEY': self.security.secret_key,
-            'DEBUG': self.debug,
-            'SQLALCHEMY_DATABASE_URI': self.database.url,
-            'SQLALCHEMY_TRACK_MODIFICATIONS': False,
-            'SQLALCHEMY_ENGINE_OPTIONS': {
-                'pool_size': self.database.pool_size,
-                'max_overflow': self.database.max_overflow,
-                'pool_timeout': self.database.pool_timeout,
-                'pool_recycle': self.database.pool_recycle,
-                'echo': self.database.echo
-            }
-        }
-        
-        # Redis configuration
-        if self.redis:
-            config['REDIS_URL'] = self.redis.url
-            config['SESSION_TYPE'] = 'redis'
-            config['SESSION_REDIS'] = self.redis.url
-        
-        # Security settings
-        config['JWT_SECRET_KEY'] = self.security.jwt_secret_key
-        config['JWT_ACCESS_TOKEN_EXPIRES'] = self.security.session_lifetime_hours * 3600
-        
-        return config
-    
     def to_dict(self) -> Dict[str, Any]:
-        """Convert settings to dictionary (safe for logging)"""
+        """Convert settings to dictionary (excluding sensitive data)"""
         return {
             'environment': self.environment,
-            'debug': self.debug,
-            'app': {
-                'host': self.app.host,
-                'port': self.app.port,
-                'log_level': self.app.log_level
+            'app_name': self.app_name,
+            'app_version': self.app_version,
+            'is_development': self.is_development,
+            'is_production': self.is_production,
+            'features': {
+                'ai_chat_enabled': self.features.ai_chat_enabled,
+                'real_time_monitoring': self.features.real_time_monitoring,
+                'auto_optimization': self.features.auto_optimization,
+                'workflow_approval': self.features.workflow_approval,
+                'performance_analytics': self.features.performance_analytics
             },
-            'database': {
-                'url': self.database.url.split('@')[-1] if '@' in self.database.url else 'sqlite',
-                'pool_size': self.database.pool_size
-            },
-            'redis_configured': self.redis is not None,
-            'google_ads_configured': self.is_google_ads_configured(),
-            'email_configured': self.email is not None,
-            'security': {
-                'session_lifetime_hours': self.security.session_lifetime_hours,
-                'rate_limit_per_minute': self.security.rate_limit_per_minute
+            'services': {
+                'google_ads_configured': bool(self.google_ads.client_id and self.google_ads.developer_token),
+                'openai_configured': bool(self.openai.api_key),
+                'redis_configured': 'redis://' in self.redis.url
             }
         }
-    
-    def is_redis_configured(self) -> bool:
-        """Check if Redis is properly configured"""
-        return self.redis is not None
 
 
 # Global settings instance
-settings = Settings()
+settings = ApplicationSettings()
+
+# Validate settings on import
+validation_result = settings.validate_required_settings()
+if validation_result['errors']:
+    import logging
+    logger = logging.getLogger(__name__)
+    for category, error_list in validation_result['errors'].items():
+        for error in error_list:
+            logger.error(f"Configuration error ({category}): {error}")
+
+if validation_result['warnings']:
+    import logging
+    logger = logging.getLogger(__name__)
+    for warning in validation_result['warnings']:
+        logger.warning(f"Configuration warning: {warning}")
+
+
+def get_settings() -> ApplicationSettings:
+    """Get application settings"""
+    return settings
+
+
+def reload_settings():
+    """Reload settings from environment"""
+    global settings
+    load_dotenv(override=True)
+    settings = ApplicationSettings()
+    return settings

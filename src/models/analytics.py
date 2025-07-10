@@ -8,12 +8,12 @@ from flask_jwt_extended import jwt_required
 from datetime import datetime, timedelta
 from sqlalchemy import func, and_
 
-from src.database import db
+from src.config.database import db
 from src.models.user import User
 from src.models.campaign import Campaign, CampaignStatus
 from src.models.conversation import Conversation
-from src.models.audit_log import AuditLog
-from src.config import config
+from src.utils.audit_log import AuditLog
+from src.config.config import config
 
 analytics_bp = Blueprint('analytics', __name__)
 

@@ -35,7 +35,9 @@ services:
 
   # Lane MCP Application
   app:
-    build: .
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: lane_mcp_app
     ports:
       - "5000:5000"
@@ -61,8 +63,8 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./logs:/app/logs
-    command: gunicorn -w 4 -b 0.0.0.0:5000 main_production:app
+      - ../logs:/app/logs
+    command: gunicorn -w 4 -b 0.0.0.0:5000 src.main_production:app
 
   # Nginx Reverse Proxy (optional)
   nginx:

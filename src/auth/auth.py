@@ -11,10 +11,10 @@ from flask_jwt_extended import (
 from datetime import datetime, timedelta
 import uuid
 
-from src.database import db
+from src.config.database import db
 from src.models.user import User, UserRole, UserStatus
-from src.models.audit_log import AuditLog, AuditAction, AuditSeverity
-from src.config import config
+from src.utils.audit_log import AuditLog, AuditAction, AuditSeverity
+from src.config.config import config
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -379,4 +379,49 @@ def load_current_user():
                 db.session.commit()
     except:
         pass  # No valid token, continue without user
+
+
+# Compatibility functions for other APIs
+def login_required(f):
+    """Decorator for routes that require authentication"""
+    from functools import wraps
+    from flask_jwt_extended import jwt_required, get_jwt_identity
+    
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # This decorator combines Flask-JWT-Extended with our custom logic
+        @jwt_required()
+        def jwt_wrapper(*args, **kwargs):
+            user_id = get_jwt_identity()
+            user = User.query.get(user_id)
+            
+            if not user or not user.is_active:
+                return jsonify({'error': 'Invalid or inactive user'}), 401
+            
+            # Set user in Flask g context for this request
+            g.current_user = user
+            return f(*args, **kwargs)
+        
+        return jwt_wrapper(*args, **kwargs)
+    
+    return decorated_function
+
+
+def get_current_user():
+    """Get current authenticated user"""
+    if hasattr(g, 'current_user') and g.current_user:
+        return g.current_user
+    
+    try:
+        from flask_jwt_extended import get_jwt_identity
+        user_id = get_jwt_identity()
+        if user_id:
+            user = User.query.get(user_id)
+            if user and user.is_active:
+                g.current_user = user
+                return user
+    except:
+        pass
+    
+    return None
 

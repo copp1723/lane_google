@@ -9,7 +9,7 @@ from typing import List, Optional
 
 from dotenv import load_dotenv
 
-from src.utils.security import APIKeyManager, SecurityConfig
+from src.auth.security import APIKeyManager, SecurityConfig
 
 # Load environment variables
 load_dotenv()
@@ -209,7 +209,7 @@ class Config:
     def _load_security_config(self) -> dict:
         """Load security configuration"""
         # Security settings
-        from src.utils.security import SecurityConfig as SecurityUtils
+        from src.auth.security import SecurityConfig as SecurityUtils
         
         secret_key = SecurityUtils.get_secret_key()
         jwt_secret = SecurityUtils.get_jwt_secret()

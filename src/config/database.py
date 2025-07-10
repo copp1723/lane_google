@@ -27,9 +27,10 @@ def init_database(app):
         try:
             # Import all models to ensure they're registered
             from src.models.user import User
+            from src.models.account import Account
             from src.models.campaign import Campaign
-            from src.models.conversation import Conversation
-            from src.models.audit_log import AuditLog
+            from src.models.conversation import Conversation, ConversationMessage
+            from src.utils.audit_log import AuditLog
             
             # Create all tables
             db.create_all()

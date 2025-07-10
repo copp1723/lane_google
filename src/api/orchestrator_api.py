@@ -8,8 +8,8 @@ from flask_login import login_required, current_user
 import logging
 from src.services.campaign_orchestrator import campaign_orchestrator, TaskStatus
 from src.models.campaign import Campaign
-from database import db
-from responses import api_response, api_error
+from src.config.database import db
+from src.utils.responses import APIResponse
 import json
 
 logger = logging.getLogger(__name__)
@@ -26,10 +26,10 @@ def create_campaign_workflow(campaign_id):
         # Get campaign
         campaign = Campaign.query.get(campaign_id)
         if not campaign:
-            return api_error('Campaign not found', 404)
+            return APIResponse.error('Campaign not found', 404)
         
         if campaign.customer_id != current_user.customer_id:
-            return api_error('Unauthorized', 403)
+            return APIResponse.error('Unauthorized', 403)
         
         # Parse campaign brief
         brief = json.loads(campaign.brief) if campaign.brief else {}
@@ -44,7 +44,7 @@ def create_campaign_workflow(campaign_id):
         campaign.status = 'in_progress'
         db.session.commit()
         
-        return api_response({
+        return APIResponse.success(data={
             'message': 'Campaign workflow created',
             'workflow_id': workflow_id,
             'campaign_id': campaign_id
@@ -52,7 +52,7 @@ def create_campaign_workflow(campaign_id):
         
     except Exception as e:
         logger.error(f'Error creating workflow: {str(e)}')
-        return api_error(f'Failed to create workflow: {str(e)}', 500)
+        return APIResponse.error(f'Failed to create workflow: {str(e)}', 500)
 
 
 @orchestrator_bp.route('/workflows/<workflow_id>/status', methods=['GET'])
@@ -62,9 +62,9 @@ def get_workflow_status(workflow_id):
     try:
         status = campaign_orchestrator.get_workflow_status(workflow_id)
         if not status:
-            return api_error('Workflow not found', 404)
+            return APIResponse.error('Workflow not found', 404)
         
-        return api_response({
+        return APIResponse.success(data={
             'workflow_id': status.workflow_id,
             'campaign_id': status.campaign_id,
             'current_phase': status.current_phase.value,
@@ -79,7 +79,7 @@ def get_workflow_status(workflow_id):
         
     except Exception as e:
         logger.error(f'Error getting workflow status: {str(e)}')
-        return api_error(f'Failed to get workflow status: {str(e)}', 500)
+        return APIResponse.error(f'Failed to get workflow status: {str(e)}', 500)
 
 
 @orchestrator_bp.route('/workflows/<workflow_id>/tasks', methods=['GET'])
@@ -89,7 +89,7 @@ def get_workflow_tasks(workflow_id):
     try:
         tasks = campaign_orchestrator.get_workflow_tasks(workflow_id)
         if not tasks:
-            return api_error('Workflow not found', 404)
+            return APIResponse.error('Workflow not found', 404)
         
         task_list = []
         for task in tasks:
@@ -105,7 +105,7 @@ def get_workflow_tasks(workflow_id):
                 'error': task.error
             })
         
-        return api_response({
+        return APIResponse.success(data={
             'workflow_id': workflow_id,
             'tasks': task_list,
             'total_tasks': len(task_list)
@@ -113,7 +113,7 @@ def get_workflow_tasks(workflow_id):
         
     except Exception as e:
         logger.error(f'Error getting workflow tasks: {str(e)}')
-        return api_error(f'Failed to get workflow tasks: {str(e)}', 500)
+        return APIResponse.error(f'Failed to get workflow tasks: {str(e)}', 500)
 
 
 @orchestrator_bp.route('/workflows/<workflow_id>/cancel', methods=['POST'])
@@ -123,16 +123,16 @@ def cancel_workflow(workflow_id):
     try:
         success = campaign_orchestrator.cancel_workflow(workflow_id)
         if not success:
-            return api_error('Workflow not found', 404)
+            return APIResponse.error('Workflow not found', 404)
         
-        return api_response({
+        return APIResponse.success(data={
             'message': 'Workflow cancelled',
             'workflow_id': workflow_id
         })
         
     except Exception as e:
         logger.error(f'Error cancelling workflow: {str(e)}')
-        return api_error(f'Failed to cancel workflow: {str(e)}', 500)
+        return APIResponse.error(f'Failed to cancel workflow: {str(e)}', 500)
 
 
 @orchestrator_bp.route('/workflows', methods=['GET'])
@@ -161,14 +161,14 @@ def list_workflows():
                     'start_time': status.start_time.isoformat()
                 })
         
-        return api_response({
+        return APIResponse.success(data={
             'workflows': workflows,
             'total': len(workflows)
         })
         
     except Exception as e:
         logger.error(f'Error listing workflows: {str(e)}')
-        return api_error(f'Failed to list workflows: {str(e)}', 500)
+        return APIResponse.error(f'Failed to list workflows: {str(e)}', 500)
 
 
 @orchestrator_bp.route('/workflows/<workflow_id>/task/<task_id>/result', methods=['GET'])
@@ -178,13 +178,13 @@ def get_task_result(workflow_id, task_id):
     try:
         tasks = campaign_orchestrator.get_workflow_tasks(workflow_id)
         if not tasks:
-            return api_error('Workflow not found', 404)
+            return APIResponse.error('Workflow not found', 404)
         
         task = next((t for t in tasks if t.id == task_id), None)
         if not task:
-            return api_error('Task not found', 404)
+            return APIResponse.error('Task not found', 404)
         
-        return api_response({
+        return APIResponse.success(data={
             'task_id': task.id,
             'status': task.status.value,
             'result': task.result,
@@ -194,7 +194,7 @@ def get_task_result(workflow_id, task_id):
         
     except Exception as e:
         logger.error(f'Error getting task result: {str(e)}')
-        return api_error(f'Failed to get task result: {str(e)}', 500)
+        return APIResponse.error(f'Failed to get task result: {str(e)}', 500)
 
 
 # Webhook for workflow status updates
@@ -205,7 +205,7 @@ def workflow_status_webhook():
         # Verify webhook signature
         api_key = request.headers.get('X-API-Key')
         if api_key != 'your-webhook-api-key':  # Replace with config
-            return api_error('Unauthorized', 401)
+            return APIResponse.error('Unauthorized', 401)
         
         data = request.get_json()
         
@@ -215,8 +215,8 @@ def workflow_status_webhook():
         # You can add custom processing here
         # For example, update external systems, send notifications, etc.
         
-        return api_response({'message': 'Status update processed'})
+        return APIResponse.success(data={'message': 'Status update processed'})
         
     except Exception as e:
         logger.error(f'Error processing webhook: {str(e)}')
-        return api_error(f'Failed to process webhook: {str(e)}', 500)
+        return APIResponse.error(f'Failed to process webhook: {str(e)}', 500)

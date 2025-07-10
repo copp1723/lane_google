@@ -11,7 +11,8 @@ from enum import Enum
 from dataclasses import dataclass, field
 import json
 from sqlalchemy import func
-from database import db
+from src.config.database import db
+from src.models.campaign import Campaign
 
 logger = logging.getLogger(__name__)
 
@@ -120,11 +121,6 @@ class BudgetPacingService:
     
     async def _check_all_budgets(self):
         """Check all active campaign budgets"""
-        import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-from campaign import Campaign
-        
         try:
             # Get all active campaigns
             active_campaigns = Campaign.query.filter_by(
@@ -141,11 +137,6 @@ from campaign import Campaign
     
     async def check_campaign_budget(self, campaign_id: str) -> PacingResult:
         """Check and analyze budget for a specific campaign"""
-        import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-from campaign import Campaign
-        
         try:
             campaign = Campaign.query.get(campaign_id)
             if not campaign:
@@ -407,10 +398,6 @@ from campaign import Campaign
         """Get current spend for a campaign"""
         # In production, this would fetch from Google Ads API
         # For now, return mock data
-        import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-from campaign import Campaign
         campaign = Campaign.query.get(campaign_id)
         return campaign.current_spend if campaign and campaign.current_spend else 0.0
     

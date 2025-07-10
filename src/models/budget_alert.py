@@ -4,7 +4,7 @@ Stores budget alerts and notifications for campaigns
 """
 
 from datetime import datetime
-from database import db
+from src.config.database import db
 
 
 class BudgetAlertModel(db.Model):

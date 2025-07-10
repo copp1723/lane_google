@@ -4,7 +4,7 @@ Stores approval requests for campaign operations
 """
 
 from datetime import datetime
-from database import db
+from src.config.database import db
 
 
 class ApprovalRequestModel(db.Model):

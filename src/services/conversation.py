@@ -8,7 +8,7 @@ from enum import Enum
 import uuid
 import json
 
-from src.database import db
+from src.config.database import db
 
 class ConversationStatus(Enum):
     """Conversation status"""
@@ -71,7 +71,8 @@ class Conversation(db.Model):
     completed_at = db.Column(db.DateTime, nullable=True)
     
     # Relationships
-    campaigns = db.relationship('Campaign', backref='conversation', lazy='dynamic')
+    user = db.relationship('User', backref='conversations', lazy='select')
+    # Note: Campaign relationship will be added when campaign model is updated with conversation_id
     
     def __init__(self, user_id, conversation_type=ConversationType.CAMPAIGN_PLANNING, **kwargs):
         self.user_id = user_id

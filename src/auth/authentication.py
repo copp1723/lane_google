@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from typing import Dict, Optional, Any
 from functools import wraps
 from flask import request, jsonify, current_app, g
-from database import db
+from src.config.database import db
 from src.models.user import User
 
 logger = logging.getLogger(__name__)

@@ -9,10 +9,10 @@ import psutil
 from datetime import datetime
 from typing import Dict, Any, List
 from flask import current_app
-from database import db
-from redis_config import redis_client
+from src.config.database import db
+from src.config.redis_config import redis_client
 import asyncio
-from google_ads import GoogleAdsClient
+from google.ads.googleads.client import GoogleAdsClient
 
 logger = logging.getLogger(__name__)
 
