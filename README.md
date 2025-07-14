@@ -180,10 +180,10 @@ lane_google/
 
 #### Google Ads API (Required for production)
 ```env
-GOOGLE_ADS_CLIENT_ID=your-client-id
-GOOGLE_ADS_CLIENT_SECRET=your-client-secret
-GOOGLE_ADS_REFRESH_TOKEN=your-refresh-token
-GOOGLE_ADS_DEVELOPER_TOKEN=your-developer-token
+GOOGLE_ADS_CLIENT_ID=800-216-1531
+GOOGLE_ADS_CLIENT_SECRET=your-client-secret  # Generate via Google Cloud Console OAuth 2.0
+GOOGLE_ADS_REFRESH_TOKEN=your-refresh-token  # Generate if needed - check if project requires it
+GOOGLE_ADS_DEVELOPER_TOKEN=T3WOJXJ3JgRJ1Wg-1wd4Kg
 ```
 
 #### OpenAI API (Required for AI features)
