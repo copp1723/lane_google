@@ -293,9 +293,11 @@ if __name__ == '__main__':
     
     # Run application
     try:
+        # Use PORT environment variable for Render deployment
+        port = int(os.environ.get('PORT', settings.server.port))
         app.run(
-            host=settings.server.host,
-            port=settings.server.port,
+            host='0.0.0.0',
+            port=port,
             debug=settings.server.debug,
             threaded=True
         )

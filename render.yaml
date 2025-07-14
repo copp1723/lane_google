@@ -7,7 +7,7 @@ services:
     buildCommand: |
       pip install --upgrade pip
       pip install -r config/requirements.txt
-    startCommand: python -m gunicorn -w 4 -b 0.0.0.0:$PORT src.main_production:app
+    startCommand: python src/main_production.py
     envVars:
       - key: PYTHON_VERSION
         value: 3.9
