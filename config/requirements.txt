@@ -29,7 +29,7 @@ google-auth-httplib2==0.1.1
 # API & Web Server
 gunicorn==21.2.0
 requests==2.31.0
-urllib3==2.0.5
+urllib3<2.0
 
 # Data Processing
 pandas==2.1.1
