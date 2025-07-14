@@ -45,6 +45,7 @@ services:
     name: lane-mcp-redis
     plan: starter
     maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
 
 # Database
 databases:
