@@ -60,16 +60,15 @@ services:
         source: /*
         destination: /index.html
 
+  # Redis for caching and sessions
+  - type: redis
+    name: lane-mcp-redis
+    plan: starter
+    maxmemoryPolicy: allkeys-lru
+
 # Database
 databases:
   - name: lane-mcp-db
     databaseName: lane_mcp_production
     plan: starter
     postgresMajorVersion: 15
-
-# Redis for caching and sessions
-services:
-  - type: redis
-    name: lane-mcp-redis
-    plan: starter
-    maxmemoryPolicy: allkeys-lru
