@@ -51,5 +51,5 @@ services:
 databases:
   - name: lane-mcp-db
     databaseName: lane_mcp_production
-    plan: starter
+    plan: free
     postgresMajorVersion: 15
