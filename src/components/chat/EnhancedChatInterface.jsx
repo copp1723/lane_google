@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, MessageCircle, StopCircle, FileText, Sparkles, AlertCircle } from 'lucide-react';
 import MessageBubble from './MessageBubble.jsx';
-import useAIStream from '../../hooks/useAIStream.js';
+import { useAIStream } from '../../hooks/useAIStream.ts';
 
 const EnhancedChatInterface = () => {
   const [messages, setMessages] = useState([

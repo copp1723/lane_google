@@ -9,6 +9,7 @@ import asyncio
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 from typing import Dict, Any, Optional
+from sqlalchemy.exc import SQLAlchemyError
 
 from src.services.openrouter_client import get_openrouter_client
 from src.services.conversation import Conversation, MessageRole, ConversationType
@@ -103,6 +104,18 @@ def chat_with_agent():
                     context=context
                 )
             )
+        except ConnectionError as e:
+            logger.error(f"AI service connection error: {e}")
+            # Fallback response for connection issues
+            response = {
+                'response': "I'm experiencing connectivity issues. Let me help you with campaign planning. Can you tell me more about your business goals and target audience?",
+                'conversation_id': conversation_id,
+                'model_used': 'fallback-model',
+                'usage': {'total_tokens': 50}
+            }
+        except ValueError as e:
+            logger.error(f"AI service validation error: {e}")
+            return jsonify({'error': f'Invalid input: {str(e)}'}), 400
         except Exception as e:
             logger.error(f"AI service error: {e}")
             # Fallback response
@@ -124,8 +137,13 @@ def chat_with_agent():
         )
         
         # Update conversation
-        conversation.total_tokens_used += response.get('usage', {}).get('total_tokens', 0)
-        db.session.commit()
+        try:
+            conversation.total_tokens_used += response.get('usage', {}).get('total_tokens', 0)
+            db.session.commit()
+        except SQLAlchemyError as e:
+            logger.error(f"Database error updating conversation: {e}")
+            db.session.rollback()
+            return jsonify({'error': 'Database error occurred'}), 500
         
         return jsonify({
             'response': response['response'],
@@ -139,6 +157,13 @@ def chat_with_agent():
             }
         })
         
+    except SQLAlchemyError as e:
+        logger.error(f"Database error: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': 'Database error occurred'}), 500
+    except ValueError as e:
+        logger.error(f"Validation error: {str(e)}")
+        return jsonify({'error': f'Invalid input: {str(e)}'}), 400
     except Exception as e:
         logger.error(f"Chat error: {str(e)}")
         return jsonify({'error': f'Chat failed: {str(e)}'}), 500

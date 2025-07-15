@@ -25,7 +25,7 @@ import {
   Activity
 } from 'lucide-react';
 import MessageBubble from './MessageBubble.jsx';
-import useAIStream from '../../hooks/useAIStream.js';
+import { useAIStream } from '../../hooks/useAIStream.ts';
 
 const EnterpriseAIChat = () => {
   const [messages, setMessages] = useState([

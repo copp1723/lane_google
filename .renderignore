@@ -1,0 +1,49 @@
+# Development files
+node_modules/
+.env
+.env.local
+.env.development
+.env.test
+*.log
+logs/
+
+# Frontend development files
+src/components/
+frontend/
+*.jsx
+*.tsx
+*.css
+*.scss
+
+# Test files
+tests/
+test_*
+*_test.py
+__pycache__/
+*.pyc
+pytest_cache/
+
+# Documentation
+README.md
+docs/
+*.md
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git files
+.git/
+.gitignore
+
+# Docker files (not needed for Render's native build)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Backup files
+*.backup
+*_backup.py
+lane_google_corrupted/

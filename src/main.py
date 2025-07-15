@@ -1,5 +1,6 @@
 import os
 import sys
+import secrets
 # DON'T CHANGE THIS !!!
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -33,7 +34,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
-app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', secrets.token_urlsafe(32))
 
 # Enable CORS for all routes
 CORS(app, origins="*")
