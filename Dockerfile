@@ -13,18 +13,19 @@ RUN apt-get update && apt-get install -y \
 # Create non-root user
 RUN useradd -m -u 1000 appuser
 
-# Set working directory
+# Set working directory and give ownership to appuser
 WORKDIR /app
+RUN chown appuser:appuser /app
 
 # Copy requirements first for better caching
-COPY config/requirements.txt .
+COPY --chown=appuser:appuser config/requirements.txt .
 
 # Switch to non-root user early
 USER appuser
 
-# Install Python dependencies to user directory
-RUN pip install --upgrade pip --user && \
-    pip install --no-cache-dir --user -r requirements.txt
+# Install Python dependencies to user directory with --no-warn-script-location
+RUN pip install --upgrade pip --user --no-warn-script-location && \
+    pip install --no-cache-dir --user --no-warn-script-location -r requirements.txt
 
 # Copy application code
 COPY --chown=appuser:appuser . .
