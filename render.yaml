@@ -37,6 +37,21 @@ services:
       # OpenRouter API Configuration - Set in Render Dashboard
       - key: OPENROUTER_API_KEY
         sync: false
+    routes:
+      - type: rewrite
+        source: /.*
+        destination: /index.html
+
+  # Frontend Static Site
+  - type: web
+    name: lane-mcp-frontend
+    runtime: static
+    plan: starter
+    staticPublishPath: frontend/dist
+    routes:
+      - type: rewrite
+        source: /.*
+        destination: /index.html
 
   # Redis for caching and sessions
   - type: redis
