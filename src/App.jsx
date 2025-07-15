@@ -622,25 +622,25 @@ const App = () => {
                       <div>
                         <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>Total Impressions</div>
                         <div style={{ color: '#111827', fontSize: '1.5rem', fontWeight: '700' }}>
-                          {dashboardData.analytics.overview.impressions.toLocaleString()}
+                          {dashboardData.analytics?.overview?.impressions?.toLocaleString?.() || '0'}
                         </div>
                       </div>
                       <div>
                         <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>Total Clicks</div>
                         <div style={{ color: '#111827', fontSize: '1.5rem', fontWeight: '700' }}>
-                          {dashboardData.analytics.overview.clicks.toLocaleString()}
+                          {dashboardData.analytics?.overview?.clicks?.toLocaleString?.() || '0'}
                         </div>
                       </div>
                       <div>
                         <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>Total Conversions</div>
                         <div style={{ color: '#111827', fontSize: '1.5rem', fontWeight: '700' }}>
-                          {dashboardData.analytics.overview.conversions.toLocaleString()}
+                          {dashboardData.analytics?.overview?.conversions?.toLocaleString?.() || '0'}
                         </div>
                       </div>
                       <div>
                         <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>Total Spend</div>
                         <div style={{ color: '#111827', fontSize: '1.5rem', fontWeight: '700' }}>
-                          ${dashboardData.analytics.overview.spend.toLocaleString()}
+                          ${dashboardData.analytics?.overview?.spend?.toLocaleString?.() || '0'}
                         </div>
                       </div>
                     </div>
@@ -679,19 +679,19 @@ const App = () => {
                       <div>
                         <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>Total Budget</div>
                         <div style={{ color: '#111827', fontSize: '1.5rem', fontWeight: '700' }}>
-                          ${dashboardData.budgetPacing.total_budget.toLocaleString()}
+                          ${dashboardData.budgetPacing?.total_budget?.toLocaleString?.() || '0'}
                         </div>
                       </div>
                       <div>
                         <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>Spent Today</div>
                         <div style={{ color: '#111827', fontSize: '1.5rem', fontWeight: '700' }}>
-                          ${dashboardData.budgetPacing.spent_today.toLocaleString()}
+                          ${dashboardData.budgetPacing?.spent_today?.toLocaleString?.() || '0'}
                         </div>
                       </div>
                       <div>
                         <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>Remaining</div>
                         <div style={{ color: '#111827', fontSize: '1.5rem', fontWeight: '700' }}>
-                          ${dashboardData.budgetPacing.remaining_budget.toLocaleString()}
+                          ${dashboardData.budgetPacing?.remaining_budget?.toLocaleString?.() || '0'}
                         </div>
                       </div>
                       <div>
