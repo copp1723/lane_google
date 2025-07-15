@@ -12,14 +12,21 @@ dashboard_bp = Blueprint('dashboard', __name__)
 
 
 @dashboard_bp.route('/api/analytics/dashboard/<customer_id>')
-@token_required
 def get_analytics_dashboard(customer_id):
     """Advanced Analytics Dashboard API"""
     try:
-        current_user = get_current_user()
-        # Check user authorization - assuming customer_id maps to user's account access
-        if not current_user:
-            return jsonify({"success": False, "error": "Unauthorized"}), 403
+        # Allow demo access without authentication
+        if customer_id == 'demo-customer':
+            current_user = {'id': 'demo', 'name': 'Demo User'}
+        else:
+            # For non-demo customers, check authentication
+            from flask import request
+            auth_header = request.headers.get('Authorization')
+            if not auth_header:
+                return jsonify({"success": False, "error": "Authentication required"}), 401
+            current_user = get_current_user()
+            if not current_user:
+                return jsonify({"success": False, "error": "Unauthorized"}), 403
             
         # Mock data for analytics dashboard
         return jsonify({
@@ -76,14 +83,21 @@ def get_analytics_dashboard(customer_id):
 
 
 @dashboard_bp.route('/api/budget-pacing/summary/<customer_id>')
-@token_required
 def get_budget_pacing_summary(customer_id):
     """Budget Pacing Dashboard API"""
     try:
-        current_user = get_current_user()
-        # Check user authorization - assuming customer_id maps to user's account access
-        if not current_user:
-            return jsonify({"success": False, "error": "Unauthorized"}), 403
+        # Allow demo access without authentication
+        if customer_id == 'demo-customer':
+            current_user = {'id': 'demo', 'name': 'Demo User'}
+        else:
+            from flask import request
+            auth_header = request.headers.get('Authorization')
+            if not auth_header:
+                return jsonify({"success": False, "error": "Authentication required"}), 401
+            current_user = get_current_user()
+            # Check user authorization - assuming customer_id maps to user's account access
+            if not current_user:
+                return jsonify({"success": False, "error": "Unauthorized"}), 403
             
         # Mock campaign budget data
         campaigns = []
@@ -129,14 +143,21 @@ def get_budget_pacing_summary(customer_id):
 
 
 @dashboard_bp.route('/api/performance/summary/<customer_id>')
-@token_required
 def get_performance_summary(customer_id):
     """Performance Optimization Dashboard API"""
     try:
-        current_user = get_current_user()
-        # Check user authorization - assuming customer_id maps to user's account access
-        if not current_user:
-            return jsonify({"success": False, "error": "Unauthorized"}), 403
+        # Allow demo access without authentication
+        if customer_id == 'demo-customer':
+            current_user = {'id': 'demo', 'name': 'Demo User'}
+        else:
+            from flask import request
+            auth_header = request.headers.get('Authorization')
+            if not auth_header:
+                return jsonify({"success": False, "error": "Authentication required"}), 401
+            current_user = get_current_user()
+            # Check user authorization - assuming customer_id maps to user's account access
+            if not current_user:
+                return jsonify({"success": False, "error": "Unauthorized"}), 403
             
         return jsonify({
             "success": True,
@@ -198,14 +219,21 @@ def get_performance_summary(customer_id):
 
 
 @dashboard_bp.route('/api/monitoring/status/<customer_id>')
-@token_required
 def get_monitoring_status(customer_id):
     """Real-Time Monitoring Dashboard API"""
     try:
-        current_user = get_current_user()
-        # Check user authorization - assuming customer_id maps to user's account access
-        if not current_user:
-            return jsonify({"success": False, "error": "Unauthorized"}), 403
+        # Allow demo access without authentication
+        if customer_id == 'demo-customer':
+            current_user = {'id': 'demo', 'name': 'Demo User'}
+        else:
+            from flask import request
+            auth_header = request.headers.get('Authorization')
+            if not auth_header:
+                return jsonify({"success": False, "error": "Authentication required"}), 401
+            current_user = get_current_user()
+            # Check user authorization - assuming customer_id maps to user's account access
+            if not current_user:
+                return jsonify({"success": False, "error": "Unauthorized"}), 403
             
         return jsonify({
             "success": True,

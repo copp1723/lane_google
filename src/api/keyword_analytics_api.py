@@ -6,6 +6,7 @@ Enterprise-level keyword intelligence and competitive analysis
 import logging
 import os
 import json
+import random
 from typing import Dict, List, Any, Optional
 from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta
@@ -19,6 +20,52 @@ from src.utils.responses import success_response, error_response
 logger = logging.getLogger(__name__)
 
 keyword_analytics_bp = Blueprint('keyword_analytics', __name__)
+
+@keyword_analytics_bp.route('/quick-insights', methods=['GET', 'POST'])
+def keyword_quick_insights():
+    """Quick keyword insights endpoint for demo purposes"""
+    try:
+        return jsonify({
+            "success": True,
+            "data": {
+                "keyword_summary": {
+                    "total_keywords": random.randint(100, 500),
+                    "active_keywords": random.randint(80, 400),
+                    "avg_position": round(random.uniform(2.1, 4.5), 1),
+                    "avg_quality_score": round(random.uniform(6.0, 8.5), 1),
+                    "search_volume": random.randint(10000, 50000)
+                },
+                "top_performing_keywords": [
+                    {
+                        "keyword": f"keyword {i}",
+                        "impressions": random.randint(1000, 10000),
+                        "clicks": random.randint(50, 500),
+                        "ctr": round(random.uniform(2.0, 8.0), 2),
+                        "position": round(random.uniform(1.0, 3.0), 1),
+                        "quality_score": random.randint(6, 10)
+                    }
+                    for i in range(10)
+                ],
+                "opportunities": [
+                    {
+                        "keyword": f"opportunity keyword {i}",
+                        "opportunity_type": random.choice(["high_impressions_low_clicks", "low_position_high_quality", "high_volume_untapped"]),
+                        "potential_impact": random.choice(["high", "medium", "low"]),
+                        "recommended_action": random.choice(["increase_bid", "improve_ad_copy", "add_negative_keywords"])
+                    }
+                    for i in range(5)
+                ],
+                "negative_keyword_suggestions": [
+                    "free",
+                    "cheap",
+                    "discount",
+                    "review",
+                    "comparison"
+                ]
+            }
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 class KeywordIntelligenceEngine:

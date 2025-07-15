@@ -29,6 +29,9 @@ try:
     from src.routes.campaigns import campaigns_bp
     from src.routes.health import health_bp
     from src.api.dashboard_apis import dashboard_bp
+    from src.api.campaign_analytics_api import campaign_analytics_bp
+    from src.api.keyword_analytics_api import keyword_analytics_bp
+    from src.api.campaigns_api import campaigns_api_bp
 except ImportError as e:
     logging.warning(f"Some API blueprints could not be imported: {e}")
     # Create minimal health blueprint as fallback
@@ -125,6 +128,21 @@ def register_blueprints(app: Flask):
         app.register_blueprint(dashboard_bp)
     except NameError:
         logging.warning("dashboard_bp not available")
+    
+    try:
+        app.register_blueprint(campaign_analytics_bp, url_prefix='/api/campaign-analytics')
+    except NameError:
+        logging.warning("campaign_analytics_bp not available")
+    
+    try:
+        app.register_blueprint(keyword_analytics_bp, url_prefix='/api/keyword-analytics')
+    except NameError:
+        logging.warning("keyword_analytics_bp not available")
+    
+    try:
+        app.register_blueprint(campaigns_api_bp)
+    except NameError:
+        logging.warning("campaigns_api_bp not available")
 
 
 def initialize_services(app: Flask):
