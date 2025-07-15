@@ -279,8 +279,15 @@ def validate_environment():
             for error in error_list:
                 logging.error(f"  - {category}: {error}")
         
-        if settings.is_production:
+        # Only exit for critical security errors, not missing API keys
+        critical_errors = [error for error_list in validation_result['errors'].values() for error in error_list 
+                          if 'SECRET_KEY' in error or 'JWT_SECRET_KEY' in error]
+        
+        if settings.is_production and critical_errors:
+            logging.error("Critical security configuration missing. Exiting.")
             sys.exit(1)
+        else:
+            logging.warning("Non-critical configuration errors detected. Continuing with limited functionality.")
 
 
 # Create application instance
