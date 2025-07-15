@@ -43,6 +43,13 @@ Dockerfile
 docker-compose.yml
 .dockerignore
 
+# Database files (use managed PostgreSQL instead)
+*.db
+*.sqlite
+*.sqlite3
+instance/
+database/
+
 # Backup files
 *.backup
 *_backup.py

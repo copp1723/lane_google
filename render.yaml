@@ -4,12 +4,9 @@ services:
   - type: web
     name: lane-mcp-api
     runtime: python
-    buildCommand: |
-      pip install --upgrade pip==25.1.1
-      pip install --user --no-warn-script-location -r config/requirements.txt
-    startCommand: |
-      export PATH=$HOME/.local/bin:$PATH
-      python src/main_production.py
+    plan: starter
+    buildCommand: pip install -r config/requirements.txt
+    startCommand: python src/main_production.py
     envVars:
       - key: PYTHON_VERSION
         value: 3.9
