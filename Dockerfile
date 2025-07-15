@@ -17,7 +17,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . /app/
 
 # Build the frontend
+WORKDIR /app/frontend
+RUN npm install
 RUN npm run build
+WORKDIR /app
 
 # Run the application
 CMD ["python", "src/main_production.py"]
