@@ -12,7 +12,7 @@ class BudgetAlertModel(db.Model):
     __tablename__ = 'budget_alerts'
     
     id = db.Column(db.Integer, primary_key=True)
-    campaign_id = db.Column(db.String(255), db.ForeignKey('campaigns.id'), nullable=False)
+    campaign_id = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=False)
     alert_type = db.Column(db.String(50), nullable=False)  # overspending, underspending, exhausted, at_risk
     severity = db.Column(db.String(20), nullable=False)  # low, medium, high, critical
     message = db.Column(db.Text, nullable=False)

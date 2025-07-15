@@ -138,7 +138,7 @@ def initialize_services(app: Flask):
             from src.models.budget_alert import BudgetAlertModel
             from src.models.analytics_snapshot import AnalyticsSnapshot
             from src.models.approval_request import ApprovalRequestModel
-            from src.services.conversation import Conversation
+            # Note: Conversation model is imported from services.conversation in the API layer
             
             # Initialize database tables
             db.create_all()

@@ -89,11 +89,11 @@ class AccountUser(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     account_id = db.Column(db.String(50), db.ForeignKey('accounts.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
     role = db.Column(db.Enum(AccountRole), nullable=False, default=AccountRole.VIEWER)
     
     # Metadata
-    invited_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    invited_by = db.Column(db.String(36), db.ForeignKey('users.id'))
     joined_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_access = db.Column(db.DateTime)
     

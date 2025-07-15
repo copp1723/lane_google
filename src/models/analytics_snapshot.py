@@ -12,7 +12,7 @@ class AnalyticsSnapshot(db.Model):
     __tablename__ = 'analytics_snapshots'
     
     id = db.Column(db.Integer, primary_key=True)
-    campaign_id = db.Column(db.String(255), db.ForeignKey('campaigns.id'), nullable=False)
+    campaign_id = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=False)
     
     # Metric information
     metric_type = db.Column(db.String(50), nullable=False)  # impressions, clicks, cost, etc.
