@@ -8,15 +8,14 @@
 
 ### Option 1: Use Automated Script (Recommended)
 ```bash
-cd /Users/copp1723/Desktop/lane_google
-chmod +x start_server.sh
-./start_server.sh
+chmod +x scripts/start_frontend.sh
+./scripts/start_frontend.sh
 ```
 
 ### Option 2: Manual Steps
 ```bash
-# Navigate to project
-cd /Users/copp1723/Desktop/lane_google
+# Navigate to project root
+cd /path/to/lane_google
 
 # Clear any existing processes
 lsof -ti:5174 | xargs kill -9 2>/dev/null || true

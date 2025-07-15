@@ -89,7 +89,7 @@ lane_google/
 ├── scripts/                     # Automation scripts
 │   ├── quick_start.py           # Quick setup script
 │   ├── setup_production.sh      # Production setup
-│   └── start_server.sh          # Server startup
+│   └── start_frontend.sh        # Frontend dev server
 ├── docs/                        # Documentation
 │   ├── QUICK_START.md           # Quick start guide
 │   ├── STARTUP_GUIDE.md         # Detailed startup guide
