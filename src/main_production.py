@@ -131,6 +131,15 @@ def initialize_services(app: Flask):
     """Initialize all background services"""
     with app.app_context():
         try:
+            # Import all models to ensure they're registered with SQLAlchemy
+            from src.models.user import User
+            from src.models.account import Account, AccountUser
+            from src.models.campaign import Campaign
+            from src.models.budget_alert import BudgetAlertModel
+            from src.models.analytics_snapshot import AnalyticsSnapshot
+            from src.models.approval_request import ApprovalRequestModel
+            from src.services.conversation import Conversation
+            
             # Initialize database tables
             db.create_all()
             
