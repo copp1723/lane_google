@@ -81,6 +81,23 @@ def create_app() -> Flask:
     # Initialize Flask-Migrate for database migrations
     migrate = Migrate(app, db)
 
+    # Create tables if they don't exist (for production deployment)
+    with app.app_context():
+        try:
+            # Import all models to ensure they're registered
+            from src.models.user import User
+            from src.models.account import Account
+            from src.models.campaign import Campaign
+            from src.models.conversation import Conversation, ConversationMessage
+
+            # Create all tables
+            db.create_all()
+            logging.info("Database tables created/verified successfully")
+
+        except Exception as e:
+            logging.warning(f"Database table creation warning: {str(e)}")
+            # Don't fail the app if tables already exist
+
     # Initialize Flask-Session (if Redis is available)
     try:
         from src.config.redis_config import get_flask_session_config
