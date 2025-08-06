@@ -39,10 +39,10 @@ export class OpenRouterService {
   private readonly siteName: string;
 
   constructor() {
-    this.apiKey = process.env.OPENROUTER_API_KEY || '';
-    this.baseUrl = process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1';
-    this.siteUrl = process.env.SITE_URL || 'http://localhost:3000';
-    this.siteName = process.env.SITE_NAME || 'AI Foundation';
+    this.apiKey = import.meta.env.VITE_OPENROUTER_API_KEY || '';
+    this.baseUrl = import.meta.env.VITE_OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1';
+    this.siteUrl = import.meta.env.VITE_SITE_URL || 'http://localhost:3000';
+    this.siteName = import.meta.env.VITE_SITE_NAME || 'Lane MCP';
 
     if (!this.apiKey) {
       logger.warn('OpenRouter API key not configured');

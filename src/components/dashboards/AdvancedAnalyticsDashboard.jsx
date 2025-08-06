@@ -60,9 +60,7 @@ import {
   Activity,
   Zap
 } from 'lucide-react';
-import EnvironmentConfig from '../../config/environment.js';
-
-const API_BASE_URL = EnvironmentConfig.getApiBaseUrl();
+import { LEGACY_ENDPOINTS } from '../../config/api';
 
 const AdvancedAnalyticsDashboard = ({ customerId }) => {
   const [dashboardData, setDashboardData] = useState({});
@@ -92,10 +90,10 @@ const AdvancedAnalyticsDashboard = ({ customerId }) => {
       
       // Load all analytics data in parallel
       const [dashboardResponse, insightsResponse, benchmarksResponse, templatesResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/analytics/dashboard/${customerId}`),
-        fetch(`${API_BASE_URL}/api/analytics/insights/${customerId}?time_range=${selectedTimeRange}`),
-        fetch(`${API_BASE_URL}/api/analytics/benchmarks`),
-        fetch(`${API_BASE_URL}/api/analytics/reports/templates`)
+        fetch(LEGACY_ENDPOINTS.ANALYTICS.DASHBOARD(customerId)),
+        fetch(LEGACY_ENDPOINTS.ANALYTICS.INSIGHTS(customerId, selectedTimeRange)),
+        fetch(LEGACY_ENDPOINTS.ANALYTICS.BENCHMARKS),
+        fetch(LEGACY_ENDPOINTS.ANALYTICS.REPORT_TEMPLATES)
       ]);
 
       if (dashboardResponse.ok) {
@@ -130,7 +128,7 @@ const AdvancedAnalyticsDashboard = ({ customerId }) => {
     try {
       setIsLoading(true);
       
-      const response = await fetch(`${API_BASE_URL}/api/analytics/reports/generate`, {
+      const response = await fetch(LEGACY_ENDPOINTS.ANALYTICS.GENERATE_REPORT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -42,8 +42,22 @@ class RealGoogleAdsService:
                 logger.error(f"Missing required environment variables: {missing_vars}")
                 return
                 
-            # Initialize client
-            self.client = GoogleAdsClient.load_from_env()
+            # Create configuration dict
+            config = {
+                "use_proto_plus": True,
+                "developer_token": os.getenv('GOOGLE_ADS_DEVELOPER_TOKEN'),
+                "client_id": os.getenv('GOOGLE_ADS_CLIENT_ID'),
+                "client_secret": os.getenv('GOOGLE_ADS_CLIENT_SECRET'),
+                "refresh_token": os.getenv('GOOGLE_ADS_REFRESH_TOKEN')
+            }
+            
+            # Add login customer ID if available
+            login_customer_id = os.getenv('GOOGLE_ADS_LOGIN_CUSTOMER_ID')
+            if login_customer_id:
+                config["login_customer_id"] = login_customer_id
+            
+            # Initialize client with configuration
+            self.client = GoogleAdsClient.load_from_dict(config)
             logger.info("Google Ads client initialized successfully")
             
         except Exception as e:

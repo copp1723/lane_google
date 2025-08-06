@@ -8,6 +8,7 @@ import { LoadingSpinner } from '@/components/ui/loading'
 import { MessageBubble } from './message-bubble'
 import { EscalationModal } from './escalation-modal'
 import { SEO_KNOWLEDGE_BASE } from '@/lib/seo-knowledge'
+import { API_V1_ENDPOINTS } from '../../config/api'
 import {
   Send,
   FileText,
@@ -70,7 +71,7 @@ export function SEOChat() {
     setLoading(true)
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch(API_V1_ENDPOINTS.AI.CHAT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_V1_ENDPOINTS } from '../../config/api';
 import { 
   Search, 
   TrendingUp, 
@@ -61,7 +62,7 @@ const EnhancedKeywordResearch = ({ onKeywordSelect, selectedKeywords = [] }) => 
       setError(null);
       
       // First get keywords from research API
-      const researchResponse = await fetch('/api/keywords/research', {
+      const researchResponse = await fetch(API_V1_ENDPOINTS.KEYWORDS.RESEARCH, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -84,7 +85,7 @@ const EnhancedKeywordResearch = ({ onKeywordSelect, selectedKeywords = [] }) => 
       }
 
       // Enhance with analytics
-      const analyticsResponse = await fetch('/api/keyword-analytics/comprehensive-analysis', {
+      const analyticsResponse = await fetch(API_V1_ENDPOINTS.KEYWORDS.COMPREHENSIVE_ANALYSIS, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

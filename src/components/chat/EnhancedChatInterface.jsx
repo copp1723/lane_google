@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, MessageCircle, StopCircle, FileText, Sparkles, AlertCircle } from 'lucide-react';
 import MessageBubble from './MessageBubble.jsx';
-import { useAIStream } from '../../hooks/useAIStream.ts';
+import { useAIStream } from '../../hooks/useAIStream.js';
+import { API_V1_ENDPOINTS } from '../../config/api';
 
 const EnhancedChatInterface = () => {
   const [messages, setMessages] = useState([
@@ -39,7 +40,7 @@ const EnhancedChatInterface = () => {
 
   const checkAPIHealth = async () => {
     try {
-      const response = await fetch('/api/ai/health');
+      const response = await fetch(API_V1_ENDPOINTS.AI.HEALTH);
       if (!response.ok) {
         throw new Error(`API Health Check Failed: ${response.status}`);
       }

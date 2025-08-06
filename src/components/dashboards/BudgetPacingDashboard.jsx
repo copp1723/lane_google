@@ -9,6 +9,7 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
 import { Alert, AlertDescription } from '../ui/alert';
+import { LEGACY_ENDPOINTS } from '../../config/api';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -32,7 +33,7 @@ const BudgetPacingDashboard = ({ customerId }) => {
   const fetchBudgetData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/budget-pacing/summary/${customerId}`, {
+      const response = await fetch(LEGACY_ENDPOINTS.BUDGET_PACING.SUMMARY(customerId), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
@@ -92,7 +93,7 @@ const BudgetPacingDashboard = ({ customerId }) => {
   // Pause campaign
   const pauseCampaign = async (campaignId) => {
     try {
-      const response = await fetch('/api/budget-pacing/pause-campaign', {
+      const response = await fetch(LEGACY_ENDPOINTS.BUDGET_PACING.PAUSE_CAMPAIGN, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -116,7 +117,7 @@ const BudgetPacingDashboard = ({ customerId }) => {
   // Resume campaign
   const resumeCampaign = async (campaignId) => {
     try {
-      const response = await fetch('/api/budget-pacing/resume-campaign', {
+      const response = await fetch(LEGACY_ENDPOINTS.BUDGET_PACING.RESUME_CAMPAIGN, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,

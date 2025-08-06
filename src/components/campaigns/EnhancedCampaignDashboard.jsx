@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_V1_ENDPOINTS } from '../../config/api';
 import { 
   Play, 
   Pause, 
@@ -56,8 +57,8 @@ const EnhancedCampaignDashboard = () => {
       setLoading(true);
       
       const [campaignsResponse, workflowsResponse] = await Promise.all([
-        fetch('/api/google-ads/campaigns'),
-        fetch('/api/orchestrator/workflows')
+        fetch(API_V1_ENDPOINTS.GOOGLE_ADS.CAMPAIGNS),
+        fetch(API_V1_ENDPOINTS.ORCHESTRATOR.WORKFLOWS)
       ]);
       
       let campaignData = [];
@@ -191,22 +192,22 @@ const EnhancedCampaignDashboard = () => {
       const campaignIds = campaigns.map(c => c.id);
       
       const [performanceResponse, optimizationResponse, anomalyResponse, testingResponse] = await Promise.all([
-        fetch('/api/campaign-analytics/performance-analysis', {
+        fetch(API_V1_ENDPOINTS.CAMPAIGN_ANALYTICS.PERFORMANCE_ANALYSIS, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ campaign_ids: campaignIds })
         }),
-        fetch('/api/campaign-analytics/budget-optimization', {
+        fetch(API_V1_ENDPOINTS.CAMPAIGN_ANALYTICS.BUDGET_OPTIMIZATION, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ campaign_ids: campaignIds })
         }),
-        fetch('/api/campaign-analytics/anomaly-detection', {
+        fetch(API_V1_ENDPOINTS.CAMPAIGN_ANALYTICS.ANOMALY_DETECTION, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ campaign_ids: campaignIds })
         }),
-        fetch('/api/campaign-analytics/testing-recommendations', {
+        fetch(API_V1_ENDPOINTS.CAMPAIGN_ANALYTICS.TESTING_RECOMMENDATIONS, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ campaign_ids: campaignIds })
@@ -340,7 +341,7 @@ const EnhancedCampaignDashboard = () => {
     try {
       const newStatus = currentStatus === 'ENABLED' ? 'PAUSED' : 'ENABLED';
       
-      const response = await fetch(`/api/google-ads/campaigns/${campaignId}/status`, {
+      const response = await fetch(API_V1_ENDPOINTS.GOOGLE_ADS.CAMPAIGN_STATUS(campaignId), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
@@ -378,7 +379,7 @@ const EnhancedCampaignDashboard = () => {
     switch (status) {
       case 'completed': return '#10b981';
       case 'in_progress': return '#f59e0b';
-      case 'review_required': return '#8b5cf6';
+      case 'review_required': return '#f87171';
       case 'optimization_needed': return '#ef4444';
       case 'failed': return '#ef4444';
       default: return '#6b7280';
@@ -452,8 +453,8 @@ const EnhancedCampaignDashboard = () => {
         textAlign: 'center'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
-          <Brain size={32} style={{ color: '#6366f1' }} />
-          <RefreshCw size={24} style={{ color: '#6366f1', animation: 'spin 1s linear infinite' }} />
+          <Brain size={32} style={{ color: '#0ea5e9' }} />
+          <RefreshCw size={24} style={{ color: '#0ea5e9', animation: 'spin 1s linear infinite' }} />
         </div>
         <h2 style={{ color: '#111827', marginTop: '1rem' }}>Analyzing Campaign Performance...</h2>
         <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>Loading AI-powered insights and recommendations</p>
@@ -482,12 +483,12 @@ const EnhancedCampaignDashboard = () => {
       <div style={{
         padding: '1.5rem 2rem',
         borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
-        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1))'
+        background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.1), rgba(248, 113, 113, 0.1))'
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <Brain size={28} style={{ color: '#6366f1' }} />
+              <Brain size={28} style={{ color: '#0ea5e9' }} />
               <h2 style={{
                 color: '#111827',
                 fontSize: '1.75rem',
@@ -547,7 +548,7 @@ const EnhancedCampaignDashboard = () => {
             
             <button
               style={{
-                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                background: 'linear-gradient(135deg, #0ea5e9, #f87171)',
                 color: 'white',
                 border: 'none',
                 borderRadius: '8px',
@@ -618,10 +619,10 @@ const EnhancedCampaignDashboard = () => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                color: activeTab === tab.id ? '#6366f1' : '#6b7280',
+                color: activeTab === tab.id ? '#0ea5e9' : '#6b7280',
                 fontSize: '0.875rem',
                 fontWeight: activeTab === tab.id ? '600' : '400',
-                borderBottom: activeTab === tab.id ? '2px solid #6366f1' : '2px solid transparent'
+                borderBottom: activeTab === tab.id ? '2px solid #0ea5e9' : '2px solid transparent'
               }}
             >
               <IconComponent size={16} />
@@ -718,7 +719,11 @@ const EnhancedCampaignDashboard = () => {
             </div>
 
             {/* Enhanced Campaigns List */}
-            <div style={{ display: 'grid', gap: '1rem' }}>
+            <div style={{
+              display: 'grid',
+              gap: '1rem',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))'
+            }}>
               {filteredCampaigns.map((campaign) => {
                 const WorkflowIcon = getWorkflowIcon(campaign.workflow_status);
                 const forecast = analyticsData.performance?.forecasts?.[campaign.id];
@@ -758,12 +763,22 @@ const EnhancedCampaignDashboard = () => {
                           color: '#111827',
                           fontWeight: '600',
                           margin: '0 0 0.5rem 0',
-                          fontSize: '1.125rem'
+                          fontSize: '1.125rem',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          maxWidth: '100%'
                         }}>
                           {campaign.name}
                         </h3>
                         
-                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <div style={{
+                          display: 'flex',
+                          gap: '8px',
+                          alignItems: 'center',
+                          flexWrap: 'wrap',
+                          marginBottom: '0.5rem'
+                        }}>
                           <span style={{
                             background: getStatusColor(campaign.status),
                             color: 'white',
@@ -776,8 +791,8 @@ const EnhancedCampaignDashboard = () => {
                           </span>
                           
                           <span style={{
-                            background: 'rgba(99, 102, 241, 0.1)',
-                            color: '#6366f1',
+                            background: 'rgba(14, 165, 233, 0.1)',
+                            color: '#0ea5e9',
                             padding: '2px 8px',
                             borderRadius: '12px',
                             fontSize: '0.75rem',
@@ -838,9 +853,9 @@ const EnhancedCampaignDashboard = () => {
                         <button
                           onClick={(e) => e.stopPropagation()}
                           style={{
-                            background: 'rgba(99, 102, 241, 0.1)',
-                            color: '#6366f1',
-                            border: '1px solid rgba(99, 102, 241, 0.3)',
+                            background: 'rgba(14, 165, 233, 0.1)',
+                            color: '#0ea5e9',
+                            border: '1px solid rgba(14, 165, 233, 0.3)',
                             borderRadius: '6px',
                             padding: '6px 8px',
                             cursor: 'pointer'
@@ -854,15 +869,28 @@ const EnhancedCampaignDashboard = () => {
                     {/* Enhanced Performance Metrics */}
                     <div style={{
                       display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-                      gap: '1rem',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                      gap: '0.75rem',
                       marginBottom: '1rem'
                     }}>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ color: '#6b7280', fontSize: '0.75rem', marginBottom: '4px' }}>
+                      <div style={{ textAlign: 'center', minWidth: 0, overflow: 'hidden' }}>
+                        <div style={{
+                          color: '#6b7280',
+                          fontSize: '0.75rem',
+                          marginBottom: '4px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
                           Budget
                         </div>
-                        <div style={{ color: '#111827', fontWeight: '600' }}>
+                        <div style={{
+                          color: '#111827',
+                          fontWeight: '600',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
                           {formatCurrency(campaign.budget_amount)}
                         </div>
                         {forecast && (
@@ -872,47 +900,112 @@ const EnhancedCampaignDashboard = () => {
                         )}
                       </div>
                       
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ color: '#6b7280', fontSize: '0.75rem', marginBottom: '4px' }}>
+                      <div style={{ textAlign: 'center', minWidth: 0, overflow: 'hidden' }}>
+                        <div style={{
+                          color: '#6b7280',
+                          fontSize: '0.75rem',
+                          marginBottom: '4px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
                           Impressions
                         </div>
-                        <div style={{ color: '#111827', fontWeight: '600' }}>
+                        <div style={{
+                          color: '#111827',
+                          fontWeight: '600',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
                           {formatNumber(campaign.performance.impressions)}
                         </div>
                       </div>
-                      
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ color: '#6b7280', fontSize: '0.75rem', marginBottom: '4px' }}>
+
+                      <div style={{ textAlign: 'center', minWidth: 0, overflow: 'hidden' }}>
+                        <div style={{
+                          color: '#6b7280',
+                          fontSize: '0.75rem',
+                          marginBottom: '4px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
                           Clicks
                         </div>
-                        <div style={{ color: '#111827', fontWeight: '600' }}>
+                        <div style={{
+                          color: '#111827',
+                          fontWeight: '600',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
                           {formatNumber(campaign.performance.clicks)}
                         </div>
                       </div>
-                      
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ color: '#6b7280', fontSize: '0.75rem', marginBottom: '4px' }}>
+
+                      <div style={{ textAlign: 'center', minWidth: 0, overflow: 'hidden' }}>
+                        <div style={{
+                          color: '#6b7280',
+                          fontSize: '0.75rem',
+                          marginBottom: '4px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
                           CTR
                         </div>
-                        <div style={{ color: '#111827', fontWeight: '600' }}>
+                        <div style={{
+                          color: '#111827',
+                          fontWeight: '600',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
                           {calculateCTR(campaign.performance.clicks, campaign.performance.impressions)}%
                         </div>
                       </div>
-                      
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ color: '#6b7280', fontSize: '0.75rem', marginBottom: '4px' }}>
+
+                      <div style={{ textAlign: 'center', minWidth: 0, overflow: 'hidden' }}>
+                        <div style={{
+                          color: '#6b7280',
+                          fontSize: '0.75rem',
+                          marginBottom: '4px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
                           Cost
                         </div>
-                        <div style={{ color: '#111827', fontWeight: '600' }}>
+                        <div style={{
+                          color: '#111827',
+                          fontWeight: '600',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
                           {formatCurrency(campaign.performance.cost)}
                         </div>
                       </div>
-                      
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ color: '#6b7280', fontSize: '0.75rem', marginBottom: '4px' }}>
+
+                      <div style={{ textAlign: 'center', minWidth: 0, overflow: 'hidden' }}>
+                        <div style={{
+                          color: '#6b7280',
+                          fontSize: '0.75rem',
+                          marginBottom: '4px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
                           Conversions
                         </div>
-                        <div style={{ color: '#111827', fontWeight: '600' }}>
+                        <div style={{
+                          color: '#111827',
+                          fontWeight: '600',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
                           {formatNumber(campaign.performance.conversions)}
                         </div>
                         {forecast && (
@@ -1025,7 +1118,7 @@ const EnhancedCampaignDashboard = () => {
                           {rec.priority.toUpperCase()}
                         </span>
                         <button style={{
-                          background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                          background: 'linear-gradient(135deg, #0ea5e9, #f87171)',
                           color: 'white',
                           border: 'none',
                           borderRadius: '6px',
@@ -1089,7 +1182,7 @@ const EnhancedCampaignDashboard = () => {
                         </p>
                       </div>
                       <button style={{
-                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                        background: 'linear-gradient(135deg, #0ea5e9, #f87171)',
                         color: 'white',
                         border: 'none',
                         borderRadius: '6px',
@@ -1148,7 +1241,7 @@ const EnhancedCampaignDashboard = () => {
                         </div>
                       </div>
                       <button style={{
-                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                        background: 'linear-gradient(135deg, #0ea5e9, #f87171)',
                         color: 'white',
                         border: 'none',
                         borderRadius: '6px',

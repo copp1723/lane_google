@@ -32,9 +32,7 @@ import {
   Settings,
   RefreshCw
 } from 'lucide-react';
-import EnvironmentConfig from '../../config/environment.js';
-
-const API_BASE_URL = EnvironmentConfig.getApiBaseUrl();
+import { LEGACY_ENDPOINTS } from '../../config/api';
 
 const PerformanceOptimizationDashboard = ({ customerId }) => {
   const [performanceData, setPerformanceData] = useState({});
@@ -57,7 +55,7 @@ const PerformanceOptimizationDashboard = ({ customerId }) => {
   const loadOptimizationSummary = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/performance/summary/${customerId}`);
+      const response = await fetch(LEGACY_ENDPOINTS.PERFORMANCE.SUMMARY(customerId));
       if (response.ok) {
         const data = await response.json();
         setOptimizationSummary(data.data || {});
@@ -73,7 +71,7 @@ const PerformanceOptimizationDashboard = ({ customerId }) => {
   const loadCampaignPerformance = async (campaignId) => {
     try {
       setIsLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/performance/analyze/${customerId}/${campaignId}`);
+      const response = await fetch(LEGACY_ENDPOINTS.PERFORMANCE.ANALYZE(customerId, campaignId));
       if (response.ok) {
         const data = await response.json();
         setPerformanceData(data.data || {});
@@ -88,7 +86,7 @@ const PerformanceOptimizationDashboard = ({ customerId }) => {
 
   const loadRecommendations = async (campaignId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/performance/recommendations/${customerId}/${campaignId}`);
+      const response = await fetch(LEGACY_ENDPOINTS.PERFORMANCE.RECOMMENDATIONS(customerId, campaignId));
       if (response.ok) {
         const data = await response.json();
         setRecommendations(data.data?.recommendations || []);
@@ -101,7 +99,7 @@ const PerformanceOptimizationDashboard = ({ customerId }) => {
   const applyOptimization = async (recommendation) => {
     try {
       setIsLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/performance/optimize/${customerId}/${recommendation.campaign_id}`, {
+      const response = await fetch(LEGACY_ENDPOINTS.PERFORMANCE.OPTIMIZE(customerId, recommendation.campaign_id), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -124,7 +122,7 @@ const PerformanceOptimizationDashboard = ({ customerId }) => {
 
   const toggleAutoOptimization = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/performance/auto-optimize/${customerId}`, {
+      const response = await fetch(LEGACY_ENDPOINTS.PERFORMANCE.AUTO_OPTIMIZE(customerId), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

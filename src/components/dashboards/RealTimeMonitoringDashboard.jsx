@@ -39,9 +39,7 @@ import {
   Info,
   X
 } from 'lucide-react';
-import EnvironmentConfig from '../../config/environment.js';
-
-const API_BASE_URL = EnvironmentConfig.getApiBaseUrl();
+import { LEGACY_ENDPOINTS } from '../../config/api';
 
 const RealTimeMonitoringDashboard = ({ customerId }) => {
   const [monitoringStatus, setMonitoringStatus] = useState({});
@@ -67,10 +65,10 @@ const RealTimeMonitoringDashboard = ({ customerId }) => {
       
       // Load all monitoring data in parallel
       const [statusResponse, issuesResponse, dashboardResponse, rulesResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/monitoring/status/${customerId}`),
-        fetch(`${API_BASE_URL}/api/monitoring/issues/${customerId}`),
-        fetch(`${API_BASE_URL}/api/monitoring/dashboard/${customerId}`),
-        fetch(`${API_BASE_URL}/api/monitoring/rules`)
+        fetch(LEGACY_ENDPOINTS.MONITORING.STATUS(customerId)),
+        fetch(LEGACY_ENDPOINTS.MONITORING.ISSUES(customerId)),
+        fetch(LEGACY_ENDPOINTS.MONITORING.DASHBOARD(customerId)),
+        fetch(LEGACY_ENDPOINTS.MONITORING.RULES)
       ]);
 
       if (statusResponse.ok) {
@@ -107,8 +105,8 @@ const RealTimeMonitoringDashboard = ({ customerId }) => {
       setIsLoading(true);
       
       const endpoint = monitoringEnabled 
-        ? `${API_BASE_URL}/api/monitoring/stop`
-        : `${API_BASE_URL}/api/monitoring/start/${customerId}`;
+        ? LEGACY_ENDPOINTS.MONITORING.STOP
+        : LEGACY_ENDPOINTS.MONITORING.START(customerId);
       
       const response = await fetch(endpoint, { method: 'POST' });
       
@@ -126,7 +124,7 @@ const RealTimeMonitoringDashboard = ({ customerId }) => {
   const resolveIssue = async (issueId, resolutionNotes = '') => {
     try {
       setIsLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/monitoring/issues/${issueId}/resolve`, {
+      const response = await fetch(LEGACY_ENDPOINTS.MONITORING.RESOLVE_ISSUE(issueId), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -147,7 +145,7 @@ const RealTimeMonitoringDashboard = ({ customerId }) => {
   const ignoreIssue = async (issueId, reason = '') => {
     try {
       setIsLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/monitoring/issues/${issueId}/ignore`, {
+      const response = await fetch(LEGACY_ENDPOINTS.MONITORING.IGNORE_ISSUE(issueId), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -167,7 +165,7 @@ const RealTimeMonitoringDashboard = ({ customerId }) => {
 
   const toggleRule = async (ruleId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/monitoring/rules/${ruleId}/toggle`, {
+      const response = await fetch(LEGACY_ENDPOINTS.MONITORING.TOGGLE_RULE(ruleId), {
         method: 'POST',
       });
 
@@ -182,7 +180,7 @@ const RealTimeMonitoringDashboard = ({ customerId }) => {
   const testAlerts = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/monitoring/alerts/test`, {
+      const response = await fetch(LEGACY_ENDPOINTS.MONITORING.TEST_ALERT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_V1_ENDPOINTS } from '../../config/api';
 import { 
   CheckCircle, 
   Clock, 
@@ -39,8 +40,8 @@ const ApprovalWorkflow = ({ workflowId, onClose }) => {
       
       // Fetch workflow status and tasks
       const [statusResponse, tasksResponse] = await Promise.all([
-        fetch(`/api/orchestrator/workflows/${workflowId}/status`),
-        fetch(`/api/orchestrator/workflows/${workflowId}/tasks`)
+        fetch(API_V1_ENDPOINTS.ORCHESTRATOR.WORKFLOW_STATUS(workflowId)),
+        fetch(`${API_V1_ENDPOINTS.ORCHESTRATOR.WORKFLOWS}/${workflowId}/tasks`)
       ]);
 
       if (!statusResponse.ok || !tasksResponse.ok) {
@@ -135,7 +136,7 @@ const ApprovalWorkflow = ({ workflowId, onClose }) => {
 
   const approveTask = async (taskId) => {
     try {
-      const response = await fetch(`/api/orchestrator/workflows/${workflowId}/tasks/${taskId}/approve`, {
+      const response = await fetch(`${API_V1_ENDPOINTS.ORCHESTRATOR.WORKFLOWS}/${workflowId}/tasks/${taskId}/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ comment: approvalComment })
@@ -175,7 +176,7 @@ const ApprovalWorkflow = ({ workflowId, onClose }) => {
 
   const rejectTask = async (taskId) => {
     try {
-      const response = await fetch(`/api/orchestrator/workflows/${workflowId}/tasks/${taskId}/reject`, {
+      const response = await fetch(`${API_V1_ENDPOINTS.ORCHESTRATOR.WORKFLOWS}/${workflowId}/tasks/${taskId}/reject`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ comment: approvalComment })
@@ -215,7 +216,7 @@ const ApprovalWorkflow = ({ workflowId, onClose }) => {
 
   const retryTask = async (taskId) => {
     try {
-      const response = await fetch(`/api/orchestrator/workflows/${workflowId}/tasks/${taskId}/retry`, {
+      const response = await fetch(`${API_V1_ENDPOINTS.ORCHESTRATOR.WORKFLOWS}/${workflowId}/tasks/${taskId}/retry`, {
         method: 'POST'
       });
 
