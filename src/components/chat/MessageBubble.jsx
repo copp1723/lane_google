@@ -185,7 +185,7 @@ const MessageBubble = ({
       </div>
 
       {/* Timestamp and Metadata */}
-      {showTimestamp && (message.timestamp || message.metadata) && (
+      {showTimestamp && (message.timestamp || message.message_metadata) && (
         <div style={{
           fontSize: '0.75rem',
           color: '#6b7280',
@@ -195,14 +195,14 @@ const MessageBubble = ({
           paddingRight: showAvatar && isUser ? '44px' : '0'
         }}>
           {showTimestamp && message.timestamp && formatTimestamp(message.timestamp)}
-          {message.metadata?.model_used && (
+          {message.message_metadata?.model_used && (
             <span style={{ marginLeft: '8px', opacity: 0.7 }}>
-              • {message.metadata.model_used}
+              • {message.message_metadata.model_used}
             </span>
           )}
-          {message.metadata?.tokens_used && (
+          {message.message_metadata?.tokens_used && (
             <span style={{ marginLeft: '4px', opacity: 0.7 }}>
-              • {message.metadata.tokens_used} tokens
+              • {message.message_metadata.tokens_used} tokens
             </span>
           )}
         </div>

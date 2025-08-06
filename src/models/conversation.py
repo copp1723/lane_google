@@ -45,7 +45,7 @@ class Conversation(db.Model):
             conversation_id=self.id,
             content=content,
             role=role,
-            metadata=json.dumps(metadata) if metadata else None
+            message_metadata=json.dumps(metadata) if metadata else None
         )
         db.session.add(message)
         self.last_message_at = datetime.utcnow()
@@ -110,29 +110,29 @@ class ConversationMessage(db.Model):
     # Message content
     content = db.Column(db.Text, nullable=False)
     role = db.Column(db.String(20), nullable=False)  # user, assistant, system
-    metadata = db.Column(db.Text, nullable=True)  # JSON string for additional data
+    message_metadata = db.Column(db.Text, nullable=True)  # JSON string for additional data
     
     # Timestamps
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     
-    def __init__(self, conversation_id, content, role='user', metadata=None):
+    def __init__(self, conversation_id, content, role='user', message_metadata=None):
         self.conversation_id = conversation_id
         self.content = content
         self.role = role
-        self.metadata = metadata
+        self.message_metadata = message_metadata
     
-    def get_metadata(self):
+    def get_message_metadata(self):
         """Get message metadata as dict"""
-        if self.metadata:
+        if self.message_metadata:
             try:
-                return json.loads(self.metadata)
+                return json.loads(self.message_metadata)
             except json.JSONDecodeError:
                 return {}
         return {}
     
-    def set_metadata(self, metadata_dict):
+    def set_message_metadata(self, metadata_dict):
         """Set message metadata"""
-        self.metadata = json.dumps(metadata_dict)
+        self.message_metadata = json.dumps(metadata_dict)
     
     def to_dict(self):
         """Convert message to dictionary"""
@@ -141,7 +141,7 @@ class ConversationMessage(db.Model):
             'conversation_id': self.conversation_id,
             'content': self.content,
             'role': self.role,
-            'metadata': self.get_metadata(),
+            'metadata': self.get_message_metadata(),
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
     
