@@ -11,8 +11,8 @@ from datetime import datetime
 from google.ads.googleads.client import GoogleAdsClient
 from google.ads.googleads.errors import GoogleAdsException
 
-from src.auth.auth import login_required, get_current_user
-from src.utils.responses import success_response, error_response
+from src.auth.authentication import token_required as login_required, get_current_user
+from src.utils.flask_responses import success_response, error_response
 
 logger = logging.getLogger(__name__)
 

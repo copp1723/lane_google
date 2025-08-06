@@ -11,7 +11,7 @@ from src.services.budget_pacing import budget_pacing_service
 from src.models.campaign import Campaign
 from src.models.budget_alert import BudgetAlertModel
 from src.config.database import db
-from src.utils.responses import APIResponse
+from src.utils.flask_responses import APIResponse
 
 logger = logging.getLogger(__name__)
 

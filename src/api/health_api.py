@@ -6,7 +6,7 @@ Provides system health checks and monitoring endpoints
 from flask import Blueprint, jsonify, request
 import logging
 from src.services.health_monitor import health_monitor
-from src.utils.responses import APIResponse
+from src.utils.flask_responses import APIResponse
 import asyncio
 
 logger = logging.getLogger(__name__)

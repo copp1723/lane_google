@@ -45,12 +45,13 @@ class GoogleAdsConfig:
 
 
 @dataclass
-class OpenAIConfig:
-    """OpenAI API configuration"""
-    api_key: Optional[str] = field(default_factory=lambda: os.getenv('OPENAI_API_KEY'))
-    model: str = field(default_factory=lambda: os.getenv('OPENAI_MODEL', 'gpt-4'))
-    max_tokens: int = field(default_factory=lambda: int(os.getenv('OPENAI_MAX_TOKENS', '1000')))
-    temperature: float = field(default_factory=lambda: float(os.getenv('OPENAI_TEMPERATURE', '0.7')))
+class OpenRouterConfig:
+    """OpenRouter API configuration"""
+    api_key: Optional[str] = field(default_factory=lambda: os.getenv('OPENROUTER_API_KEY'))
+    base_url: str = field(default_factory=lambda: os.getenv('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1'))
+    model: str = field(default_factory=lambda: os.getenv('OPENROUTER_MODEL', 'anthropic/claude-3.5-sonnet'))
+    max_tokens: int = field(default_factory=lambda: int(os.getenv('OPENROUTER_MAX_TOKENS', '4000')))
+    temperature: float = field(default_factory=lambda: float(os.getenv('OPENROUTER_TEMPERATURE', '0.7'))))
 
 
 @dataclass
@@ -103,7 +104,7 @@ class ApplicationSettings:
     database: DatabaseConfig = field(default_factory=DatabaseConfig)
     security: SecurityConfig = field(default_factory=SecurityConfig)
     google_ads: GoogleAdsConfig = field(default_factory=GoogleAdsConfig)
-    openai: OpenAIConfig = field(default_factory=OpenAIConfig)
+    openrouter: OpenRouterConfig = field(default_factory=OpenRouterConfig)
     redis: RedisConfig = field(default_factory=RedisConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
     server: ServerConfig = field(default_factory=ServerConfig)
@@ -144,9 +145,9 @@ class ApplicationSettings:
         if not self.google_ads.developer_token:
             warnings.append('Google Ads developer token not configured - Google Ads features will be disabled')
         
-        # Check OpenAI configuration
-        if not self.openai.api_key:
-            warnings.append('OpenAI API key not configured - AI features will be disabled')
+        # Check OpenRouter configuration
+        if not self.openrouter.api_key:
+            warnings.append('OpenRouter API key not configured - AI features will be disabled')
         
         return {
             'errors': errors,
@@ -181,7 +182,7 @@ class ApplicationSettings:
             },
             'services': {
                 'google_ads_configured': bool(self.google_ads.client_id and self.google_ads.developer_token),
-                'openai_configured': bool(self.openai.api_key),
+                'openrouter_configured': bool(self.openrouter.api_key),
                 'redis_configured': 'redis://' in self.redis.url
             }
         }

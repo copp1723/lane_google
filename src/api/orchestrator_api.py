@@ -9,7 +9,7 @@ import logging
 from src.services.campaign_orchestrator import campaign_orchestrator, TaskStatus
 from src.models.campaign import Campaign
 from src.config.database import db
-from src.utils.responses import APIResponse
+from src.utils.flask_responses import APIResponse
 import json
 
 logger = logging.getLogger(__name__)
