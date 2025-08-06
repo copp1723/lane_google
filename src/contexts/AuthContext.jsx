@@ -11,12 +11,29 @@ export const useAuth = () => {
   return context;
 };
 
+// TEMPORARY: Dev mode bypass
+const DEV_MODE = true; // Set to false in production
+const DEV_USER = {
+  id: 1,
+  email: 'admin@lane-ai.com',
+  first_name: 'Admin',
+  last_name: 'User',
+  role: 'admin'
+};
+
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState(localStorage.getItem('auth_token'));
+  // TEMPORARY: Auto-login in dev mode
+  const [user, setUser] = useState(DEV_MODE ? DEV_USER : null);
+  const [loading, setLoading] = useState(false);
+  const [token, setToken] = useState(DEV_MODE ? 'dev-token' : localStorage.getItem('auth_token'));
 
   useEffect(() => {
+    // Skip API calls in dev mode
+    if (DEV_MODE) {
+      setLoading(false);
+      return;
+    }
+
     if (token) {
       fetchUserProfile();
     } else {
@@ -55,6 +72,15 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = async (email, password) => {
+    // TEMPORARY: Bypass login in dev mode
+    if (DEV_MODE) {
+      console.log('🔐 Dev Mode: Bypassing authentication');
+      setUser(DEV_USER);
+      setToken('dev-token');
+      localStorage.setItem('auth_token', 'dev-token');
+      return { success: true };
+    }
+
     try {
       const response = await fetch(API_V1_ENDPOINTS.AUTH.LOGIN, {
         method: 'POST',
@@ -64,32 +90,45 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ email, password })
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Login failed');
+        throw new Error(result.message || 'Login failed');
       }
 
-      const result = await response.json();
-      
       if (result.success && result.data) {
-        const { access_token, user: userData } = result.data;
+        const { token: newToken, user: userData } = result.data;
         
-        // Store token and update state
-        localStorage.setItem('auth_token', access_token);
-        setToken(access_token);
+        // Store token
+        localStorage.setItem('auth_token', newToken);
+        setToken(newToken);
+        
+        // Store user
         setUser(userData);
         
-        return { success: true, user: userData };
+        return { success: true };
       } else {
-        throw new Error(result.message || 'Login failed');
+        throw new Error(result.message || 'Invalid login response');
       }
     } catch (error) {
       console.error('Login error:', error);
-      return { success: false, error: error.message };
+      return { 
+        success: false, 
+        error: error.message || 'Failed to login' 
+      };
     }
   };
 
   const register = async (userData) => {
+    // TEMPORARY: Bypass registration in dev mode
+    if (DEV_MODE) {
+      console.log('🔐 Dev Mode: Bypassing registration');
+      setUser(DEV_USER);
+      setToken('dev-token');
+      localStorage.setItem('auth_token', 'dev-token');
+      return { success: true };
+    }
+
     try {
       const response = await fetch(API_V1_ENDPOINTS.AUTH.REGISTER, {
         method: 'POST',
@@ -99,86 +138,53 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify(userData)
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Registration failed');
+        throw new Error(result.message || 'Registration failed');
       }
 
-      const result = await response.json();
-      
       if (result.success && result.data) {
-        const { access_token, user: newUser } = result.data;
+        const { token: newToken, user: newUser } = result.data;
         
-        // Store token and update state
-        localStorage.setItem('auth_token', access_token);
-        setToken(access_token);
+        // Store token
+        localStorage.setItem('auth_token', newToken);
+        setToken(newToken);
+        
+        // Store user
         setUser(newUser);
         
-        return { success: true, user: newUser };
+        return { success: true };
       } else {
-        throw new Error(result.message || 'Registration failed');
+        throw new Error(result.message || 'Invalid registration response');
       }
     } catch (error) {
       console.error('Registration error:', error);
-      return { success: false, error: error.message };
+      return { 
+        success: false, 
+        error: error.message || 'Failed to register' 
+      };
     }
   };
 
-  const logout = async () => {
-    try {
-      // Call logout endpoint if token exists
-      if (token) {
-        await fetch(API_V1_ENDPOINTS.AUTH.LOGOUT, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Logout API error:', error);
-      // Continue with local logout even if API call fails
-    } finally {
-      // Clear local state
-      localStorage.removeItem('auth_token');
-      setToken(null);
-      setUser(null);
+  const logout = () => {
+    localStorage.removeItem('auth_token');
+    setToken(null);
+    setUser(DEV_MODE ? null : null); // Clear user even in dev mode
+    
+    // Redirect to login if not in dev mode
+    if (!DEV_MODE) {
+      window.location.href = '/login';
     }
   };
 
-  const refreshToken = async () => {
-    try {
-      const response = await fetch(API_V1_ENDPOINTS.AUTH.REFRESH, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Token refresh failed');
-      }
-
-      const result = await response.json();
-      
-      if (result.success && result.data?.access_token) {
-        const newToken = result.data.access_token;
-        localStorage.setItem('auth_token', newToken);
-        setToken(newToken);
-        return true;
-      } else {
-        throw new Error('Invalid refresh response');
-      }
-    } catch (error) {
-      console.error('Token refresh error:', error);
-      logout();
-      return false;
+  const updateProfile = async (updates) => {
+    // TEMPORARY: Mock update in dev mode
+    if (DEV_MODE) {
+      setUser({ ...user, ...updates });
+      return { success: true };
     }
-  };
 
-  const updateUserProfile = async (profileData) => {
     try {
       const response = await fetch(API_V1_ENDPOINTS.AUTH.PROFILE, {
         method: 'PUT',
@@ -186,25 +192,27 @@ export const AuthProvider = ({ children }) => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(profileData)
+        body: JSON.stringify(updates)
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Profile update failed');
+        throw new Error(result.message || 'Failed to update profile');
       }
 
-      const result = await response.json();
-      
       if (result.success && result.data) {
         setUser(result.data);
-        return { success: true, user: result.data };
+        return { success: true };
       } else {
-        throw new Error(result.message || 'Profile update failed');
+        throw new Error(result.message || 'Invalid update response');
       }
     } catch (error) {
       console.error('Profile update error:', error);
-      return { success: false, error: error.message };
+      return { 
+        success: false, 
+        error: error.message || 'Failed to update profile' 
+      };
     }
   };
 
@@ -212,12 +220,13 @@ export const AuthProvider = ({ children }) => {
     user,
     token,
     loading,
-    isAuthenticated: !!user && !!token,
     login,
     register,
     logout,
-    refreshToken,
-    updateUserProfile
+    updateProfile,
+    isAuthenticated: DEV_MODE ? true : !!user,
+    isAdmin: user?.role === 'admin',
+    DEV_MODE // Expose dev mode flag
   };
 
   return (
