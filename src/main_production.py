@@ -76,9 +76,22 @@ def create_app() -> Flask:
     
     # Initialize database
     db.init_app(app)
-    
+
     # Initialize Flask-Migrate for database migrations
     migrate = Migrate(app, db)
+
+    # Initialize Flask-Session (if Redis is available)
+    try:
+        from src.config.redis_config import get_flask_session_config
+        session_config = get_flask_session_config()
+        app.config.update(session_config)
+        Session(app)
+        logging.info("Flask-Session initialized with Redis backend")
+    except Exception as e:
+        logging.warning(f"Could not initialize Flask-Session: {e}")
+        # Fall back to filesystem sessions
+        app.config['SESSION_TYPE'] = 'filesystem'
+        Session(app)
     
     # Register blueprints
     register_blueprints(app)
