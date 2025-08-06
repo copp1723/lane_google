@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Eye, EyeOff, Zap, Mail, Lock, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, Zap, Mail, Lock, Loader2, AlertCircle, CheckCircle, Sparkles } from 'lucide-react';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -13,9 +13,20 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, DEV_MODE } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // AUTO-LOGIN IN DEV MODE
+  useEffect(() => {
+    if (DEV_MODE) {
+      console.log('🔐 DEV MODE: Auto-logging in...');
+      setTimeout(() => {
+        navigate('/', { replace: true });
+      }, 100);
+      return;
+    }
+  }, [DEV_MODE, navigate]);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -51,353 +62,454 @@ const LoginPage = () => {
       
       if (result.success) {
         setSuccess('Login successful! Redirecting...');
-        // Navigation will happen automatically due to useEffect above
+        const from = location.state?.from?.pathname || '/';
+        setTimeout(() => {
+          navigate(from, { replace: true });
+        }, 1000);
       } else {
-        setError(result.error || 'Login failed');
+        setError(result.error || 'Login failed. Please try again.');
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDemoLogin = async () => {
+  // Quick login for demo
+  const handleDemoLogin = () => {
     setFormData({
-      email: 'demo@lanegoogle.com',
-      password: 'demo123'
+      email: 'admin@lane-ai.com',
+      password: 'LaneAI2025!'
     });
-    
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const result = await login('demo@lanegoogle.com', 'demo123');
-      
-      if (result.success) {
-        setSuccess('Demo login successful! Redirecting...');
-      } else {
-        setError('Demo login failed. Please try manual login.');
-      }
-    } catch (err) {
-      setError('Demo login failed. Please try manual login.');
-    } finally {
-      setIsLoading(false);
-    }
   };
+
+  // DEV MODE: Skip login entirely
+  const handleDevModeLogin = () => {
+    navigate('/', { replace: true });
+  };
+
+  // Show dev mode message
+  if (DEV_MODE) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '1rem'
+      }}>
+        <div style={{
+          background: 'rgba(255, 255, 255, 0.95)',
+          borderRadius: '20px',
+          padding: '3rem',
+          textAlign: 'center',
+          maxWidth: '400px',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+        }}>
+          <Sparkles size={48} style={{ color: '#667eea', marginBottom: '1rem' }} />
+          <h2 style={{ marginBottom: '1rem', color: '#1a202c' }}>Dev Mode Active</h2>
+          <p style={{ marginBottom: '2rem', color: '#4a5568' }}>
+            Authentication is bypassed. Click below to enter the app.
+          </p>
+          <button
+            onClick={handleDevModeLogin}
+            style={{
+              width: '100%',
+              padding: '1rem',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '10px',
+              fontSize: '1rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'transform 0.2s'
+            }}
+            onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
+            onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+          >
+            Enter Dashboard →
+          </button>
+          <p style={{ 
+            marginTop: '1rem', 
+            fontSize: '0.75rem', 
+            color: '#718096' 
+          }}>
+            Logged in as: admin@lane-ai.com
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{
       minHeight: '100vh',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       padding: '1rem'
     }}>
       <div style={{
         width: '100%',
-        maxWidth: '400px',
+        maxWidth: '900px',
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
         background: 'rgba(255, 255, 255, 0.95)',
-        backdropFilter: 'blur(10px)',
         borderRadius: '20px',
-        padding: '2.5rem',
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-        border: '1px solid rgba(255, 255, 255, 0.2)'
+        overflow: 'hidden',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
       }}>
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            marginBottom: '1rem'
-          }}>
-            <div style={{
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              borderRadius: '12px',
-              padding: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
+        {/* Left Panel - Branding */}
+        <div style={{
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          padding: '3rem',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          color: 'white'
+        }}>
+          <div style={{ marginBottom: '2rem' }}>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px',
+              marginBottom: '2rem'
             }}>
-              <Zap size={24} color="white" />
+              <Zap size={40} />
+              <h1 style={{ 
+                fontSize: '2rem', 
+                fontWeight: '700',
+                margin: 0
+              }}>
+                Lane AI
+              </h1>
             </div>
-            <h1 style={{
-              fontSize: '1.75rem',
+            <h2 style={{ 
+              fontSize: '1.5rem', 
+              fontWeight: '600',
+              marginBottom: '1rem'
+            }}>
+              Welcome Back
+            </h2>
+            <p style={{ 
+              fontSize: '1rem',
+              opacity: 0.9,
+              lineHeight: '1.6'
+            }}>
+              Your AI-powered Google Ads management platform with intelligent budget tracking and campaign optimization.
+            </p>
+          </div>
+          
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.1)',
+            borderRadius: '12px',
+            padding: '1.5rem',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <h3 style={{ 
+              fontSize: '1rem', 
+              fontWeight: '600',
+              marginBottom: '1rem'
+            }}>
+              Platform Features
+            </h3>
+            <ul style={{ 
+              listStyle: 'none', 
+              padding: 0,
+              margin: 0,
+              fontSize: '0.875rem',
+              lineHeight: '2'
+            }}>
+              <li>✨ AI-Powered Campaign Assistant</li>
+              <li>💰 Real-time Budget Tracking</li>
+              <li>📊 Advanced Analytics Dashboard</li>
+              <li>🎯 Performance Optimization</li>
+              <li>🔔 Smart Alert System</li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Right Panel - Login Form */}
+        <div style={{ padding: '3rem' }}>
+          <div style={{ marginBottom: '2rem' }}>
+            <h2 style={{ 
+              fontSize: '1.75rem', 
               fontWeight: '700',
-              color: '#111827',
-              margin: 0
+              marginBottom: '0.5rem',
+              color: '#1a202c'
             }}>
-              Lane MCP
-            </h1>
+              Sign In
+            </h2>
+            <p style={{ 
+              color: '#718096',
+              fontSize: '0.875rem'
+            }}>
+              Enter your credentials to access your dashboard
+            </p>
           </div>
-          <p style={{
-            color: '#6b7280',
-            fontSize: '0.875rem',
-            margin: 0
-          }}>
-            Sign in to your account to access AI-powered campaign management
-          </p>
-        </div>
 
-        {/* Error/Success Messages */}
-        {error && (
-          <div style={{
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.2)',
-            borderRadius: '8px',
-            padding: '12px',
-            marginBottom: '1rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}>
-            <AlertCircle size={16} color="#dc2626" />
-            <span style={{ color: '#dc2626', fontSize: '0.875rem' }}>
+          {error && (
+            <div style={{
+              background: '#fed7d7',
+              border: '1px solid #fc8181',
+              borderRadius: '8px',
+              padding: '0.75rem',
+              marginBottom: '1rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              color: '#742a2a',
+              fontSize: '0.875rem'
+            }}>
+              <AlertCircle size={16} />
               {error}
-            </span>
-          </div>
-        )}
+            </div>
+          )}
 
-        {success && (
-          <div style={{
-            background: 'rgba(16, 185, 129, 0.1)',
-            border: '1px solid rgba(16, 185, 129, 0.2)',
-            borderRadius: '8px',
-            padding: '12px',
-            marginBottom: '1rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}>
-            <CheckCircle size={16} color="#10b981" />
-            <span style={{ color: '#10b981', fontSize: '0.875rem' }}>
+          {success && (
+            <div style={{
+              background: '#c6f6d5',
+              border: '1px solid #68d391',
+              borderRadius: '8px',
+              padding: '0.75rem',
+              marginBottom: '1rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              color: '#22543d',
+              fontSize: '0.875rem'
+            }}>
+              <CheckCircle size={16} />
               {success}
-            </span>
-          </div>
-        )}
+            </div>
+          )}
 
-        {/* Login Form */}
-        <form onSubmit={handleSubmit} style={{ marginBottom: '1.5rem' }}>
-          {/* Email Field */}
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{
-              display: 'block',
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              color: '#374151',
-              marginBottom: '0.5rem'
-            }}>
-              Email Address
-            </label>
-            <div style={{ position: 'relative' }}>
-              <Mail
-                size={20}
-                style={{
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '0.5rem',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                color: '#4a5568'
+              }}>
+                Email Address
+              </label>
+              <div style={{
+                position: 'relative'
+              }}>
+                <Mail size={18} style={{
                   position: 'absolute',
                   left: '12px',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  color: '#9ca3af'
-                }}
-              />
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="Enter your email"
-                disabled={isLoading}
-                style={{
-                  width: '100%',
-                  padding: '12px 12px 12px 44px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  fontSize: '0.875rem',
-                  outline: 'none',
-                  transition: 'border-color 0.2s',
-                  backgroundColor: isLoading ? '#f9fafb' : 'white',
-                  boxSizing: 'border-box'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-                onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-              />
+                  color: '#a0aec0'
+                }} />
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  placeholder="admin@example.com"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem 0.75rem 0.75rem 2.5rem',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem',
+                    outline: 'none',
+                    transition: 'border-color 0.2s'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                  onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Password Field */}
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{
-              display: 'block',
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              color: '#374151',
-              marginBottom: '0.5rem'
-            }}>
-              Password
-            </label>
-            <div style={{ position: 'relative' }}>
-              <Lock
-                size={20}
-                style={{
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '0.5rem',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                color: '#4a5568'
+              }}>
+                Password
+              </label>
+              <div style={{
+                position: 'relative'
+              }}>
+                <Lock size={18} style={{
                   position: 'absolute',
                   left: '12px',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  color: '#9ca3af'
-                }}
-              />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                placeholder="Enter your password"
-                disabled={isLoading}
-                style={{
-                  width: '100%',
-                  padding: '12px 44px 12px 44px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  fontSize: '0.875rem',
-                  outline: 'none',
-                  transition: 'border-color 0.2s',
-                  backgroundColor: isLoading ? '#f9fafb' : 'white',
-                  boxSizing: 'border-box'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-                onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: 'absolute',
-                  right: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  color: '#9ca3af',
-                  cursor: 'pointer'
-                }}
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
+                  color: '#a0aec0'
+                }} />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  placeholder="••••••••"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem 3rem 0.75rem 2.5rem',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem',
+                    outline: 'none',
+                    transition: 'border-color 0.2s'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                  onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#a0aec0',
+                    cursor: 'pointer',
+                    padding: '4px'
+                  }}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={isLoading || !formData.email || !formData.password}
-            style={{
-              width: '100%',
-              background: isLoading || !formData.email || !formData.password
-                ? '#9ca3af'
-                : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '12px 16px',
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              cursor: isLoading || !formData.email || !formData.password ? 'not-allowed' : 'pointer',
+            <div style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              transition: 'all 0.2s'
-            }}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                Signing In...
-              </>
-            ) : (
-              'Sign In'
-            )}
-          </button>
-        </form>
-
-        {/* Demo Login */}
-        <div style={{ marginBottom: '1.5rem' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            marginBottom: '1rem'
-          }}>
-            <div style={{ flex: 1, height: '1px', background: '#e5e7eb' }}></div>
-            <span style={{ padding: '0 1rem', color: '#6b7280', fontSize: '0.875rem' }}>
-              or
-            </span>
-            <div style={{ flex: 1, height: '1px', background: '#e5e7eb' }}></div>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleDemoLogin}
-            disabled={isLoading}
-            style={{
-              width: '100%',
-              background: 'rgba(16, 185, 129, 0.1)',
-              color: '#10b981',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
-              borderRadius: '8px',
-              padding: '12px 16px',
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              cursor: isLoading ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              if (!isLoading) {
-                e.target.style.background = 'rgba(16, 185, 129, 0.2)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = 'rgba(16, 185, 129, 0.1)';
-            }}
-          >
-            Try Demo Account
-          </button>
-        </div>
-
-        {/* Register Link */}
-        <div style={{ textAlign: 'center' }}>
-          <p style={{ color: '#6b7280', fontSize: '0.875rem', margin: 0 }}>
-            Don't have an account?{' '}
-            <Link
-              to="/register"
-              style={{
-                color: '#6366f1',
+              justifyContent: 'space-between',
+              marginBottom: '1.5rem'
+            }}>
+              <label style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '0.875rem',
+                color: '#4a5568',
+                cursor: 'pointer'
+              }}>
+                <input type="checkbox" />
+                Remember me
+              </label>
+              <a href="#" style={{
+                fontSize: '0.875rem',
+                color: '#667eea',
                 textDecoration: 'none',
-                fontWeight: '600'
-              }}
-              onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-              onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
-            >
-              Sign up here
-            </Link>
-          </p>
-        </div>
+                fontWeight: '500'
+              }}>
+                Forgot password?
+              </a>
+            </div>
 
-        <style>
-          {`
-            @keyframes spin {
-              from { transform: rotate(0deg); }
-              to { transform: rotate(360deg); }
-            }
-          `}
-        </style>
+            <button
+              type="submit"
+              disabled={isLoading}
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                background: isLoading ? '#a0aec0' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                fontWeight: '600',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'transform 0.2s'
+              }}
+              onMouseEnter={(e) => !isLoading && (e.target.style.transform = 'scale(1.02)')}
+              onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} />
+                  Signing in...
+                </>
+              ) : (
+                'Sign In'
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDemoLogin}
+              style={{
+                width: '100%',
+                marginTop: '1rem',
+                padding: '0.75rem',
+                background: 'transparent',
+                color: '#667eea',
+                border: '1px solid #667eea',
+                borderRadius: '8px',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = '#667eea';
+                e.target.style.color = 'white';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'transparent';
+                e.target.style.color = '#667eea';
+              }}
+            >
+              Use Demo Credentials
+            </button>
+          </form>
+
+          <div style={{
+            marginTop: '2rem',
+            paddingTop: '2rem',
+            borderTop: '1px solid #e2e8f0',
+            textAlign: 'center'
+          }}>
+            <p style={{
+              fontSize: '0.875rem',
+              color: '#718096'
+            }}>
+              Don't have an account? {' '}
+              <Link to="/register" style={{
+                color: '#667eea',
+                textDecoration: 'none',
+                fontWeight: '500'
+              }}>
+                Sign up
+              </Link>
+            </p>
+          </div>
+        </div>
       </div>
+
+      <style>
+        {`
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+        `}
+      </style>
     </div>
   );
 };

@@ -51,8 +51,13 @@ const LoadingSpinner = () => (
 );
 
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading, user } = useAuth();
+  const { isAuthenticated, loading, user, DEV_MODE } = useAuth();
   const location = useLocation();
+
+  // In DEV_MODE, always allow access
+  if (DEV_MODE) {
+    return children;
+  }
 
   // Show loading spinner while checking authentication
   if (loading) {
