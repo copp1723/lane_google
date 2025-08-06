@@ -12,7 +12,7 @@ export const useAuth = () => {
 };
 
 // TEMPORARY: Dev mode bypass
-const DEV_MODE = true; // Set to false in production
+const DEV_MODE = false; // Set to false in production
 const DEV_USER = {
   id: 1,
   email: 'admin@lane-ai.com',

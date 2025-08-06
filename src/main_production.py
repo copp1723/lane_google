@@ -124,6 +124,13 @@ def register_blueprints(app: Flask):
     except ImportError:
         logging.warning("user_bp not available")
     
+    # Auth API blueprint
+    try:
+        from src.api.auth_api import auth_bp
+        blueprints.append(('auth_bp', auth_bp, '/api/auth'))
+    except ImportError:
+        logging.warning("auth_bp not available")
+    
     try:
         from src.routes.ai_agent import ai_agent_bp
         blueprints.append(('ai_agent_bp', ai_agent_bp, '/api'))

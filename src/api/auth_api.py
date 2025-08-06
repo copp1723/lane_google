@@ -96,7 +96,8 @@ def register():
             'success': True,
             'message': 'User registered successfully',
             'user': user.to_dict(),
-            'token': token
+            'access_token': token,
+            'token': token  # Keep for backward compatibility
         }), 201
         
     except Exception as e:
@@ -170,7 +171,8 @@ def login():
             'success': True,
             'message': 'Login successful',
             'user': user.to_dict(),
-            'token': token
+            'access_token': token,
+            'token': token  # Keep for backward compatibility
         }), 200
         
     except Exception as e:
@@ -235,7 +237,8 @@ def refresh_token():
         
         return jsonify({
             'success': True,
-            'token': new_token
+            'access_token': new_token,
+            'token': new_token  # Keep for backward compatibility
         }), 200
         
     except Exception as e:
@@ -247,6 +250,7 @@ def refresh_token():
 
 
 @auth_bp.route('/profile', methods=['GET'])
+@auth_bp.route('/me', methods=['GET'])  # Also support /me endpoint for frontend compatibility
 @token_required
 def get_profile():
     """Get current user profile"""
