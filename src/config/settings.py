@@ -51,7 +51,7 @@ class OpenRouterConfig:
     base_url: str = field(default_factory=lambda: os.getenv('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1'))
     model: str = field(default_factory=lambda: os.getenv('OPENROUTER_MODEL', 'anthropic/claude-3.5-sonnet'))
     max_tokens: int = field(default_factory=lambda: int(os.getenv('OPENROUTER_MAX_TOKENS', '4000')))
-    temperature: float = field(default_factory=lambda: float(os.getenv('OPENROUTER_TEMPERATURE', '0.7'))))
+    temperature: float = field(default_factory=lambda: float(os.getenv('OPENROUTER_TEMPERATURE', '0.7')))
 
 
 @dataclass
