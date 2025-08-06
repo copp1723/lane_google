@@ -12,7 +12,7 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from flask import Flask, send_from_directory, g, request
+from flask import Flask, send_from_directory, g, request, send_file
 from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_session import Session
@@ -64,6 +64,7 @@ def create_app() -> Flask:
     """Application factory"""
     app = Flask(__name__,
                 static_folder=os.path.join(os.path.dirname(__file__), 'static'),
+                static_url_path='',
                 instance_relative_config=True)
     
     # Basic configuration
@@ -99,116 +100,120 @@ def create_app() -> Flask:
     # Initialize services
     initialize_services(app)
     
-    # Add error handlers
+    # Register frontend routes (must be last!)
+    register_frontend_routes(app)
+    
+    # Register error handlers
     register_error_handlers(app)
     
-    # Add request hooks
+    # Register request hooks
     register_request_hooks(app)
-    
-    # Serve frontend
-    register_frontend_routes(app)
     
     return app
 
 
 def register_blueprints(app: Flask):
     """Register all API blueprints"""
-    # Health checks (no prefix for basic health)
-    app.register_blueprint(health_bp)
+    # Try to import and register blueprints
+    blueprints = []
     
-    # Core APIs (with error handling)
+    # Core blueprints (always try to register)
     try:
-        app.register_blueprint(user_bp, url_prefix='/api/users')
-    except NameError:
+        from src.routes.user import user_bp
+        blueprints.append(('user_bp', user_bp, '/api'))
+    except ImportError:
         logging.warning("user_bp not available")
     
     try:
-        app.register_blueprint(ai_agent_bp, url_prefix='/api/ai')
-    except NameError:
+        from src.routes.ai_agent import ai_agent_bp
+        blueprints.append(('ai_agent_bp', ai_agent_bp, '/api'))
+    except ImportError:
         logging.warning("ai_agent_bp not available")
     
     try:
-        app.register_blueprint(google_ads_bp, url_prefix='/api/google-ads')
-    except NameError:
+        from src.routes.google_ads import google_ads_bp
+        blueprints.append(('google_ads_bp', google_ads_bp, '/api'))
+    except ImportError:
         logging.warning("google_ads_bp not available")
     
     try:
-        app.register_blueprint(campaigns_bp, url_prefix='/api/campaigns')
-    except NameError:
+        from src.routes.campaigns import campaigns_bp
+        blueprints.append(('campaigns_bp', campaigns_bp, '/api'))
+    except ImportError:
         logging.warning("campaigns_bp not available")
     
     try:
-        app.register_blueprint(dashboard_bp)
-    except NameError:
+        from src.routes.health import health_bp
+        blueprints.append(('health_bp', health_bp, ''))
+    except ImportError:
+        logging.warning("health_bp not available")
+    
+    # API blueprints (optional)
+    try:
+        from src.api.dashboard_apis import dashboard_bp
+        blueprints.append(('dashboard_bp', dashboard_bp, '/api'))
+    except ImportError:
         logging.warning("dashboard_bp not available")
     
     try:
-        app.register_blueprint(campaign_analytics_bp, url_prefix='/api/campaign-analytics')
-    except NameError:
+        from src.api.campaign_analytics_api import campaign_analytics_bp
+        blueprints.append(('campaign_analytics_bp', campaign_analytics_bp, '/api'))
+    except ImportError:
         logging.warning("campaign_analytics_bp not available")
     
     try:
-        app.register_blueprint(keyword_analytics_bp, url_prefix='/api/keyword-analytics')
-    except NameError:
+        from src.api.keyword_analytics_api import keyword_analytics_bp
+        blueprints.append(('keyword_analytics_bp', keyword_analytics_bp, '/api'))
+    except ImportError:
         logging.warning("keyword_analytics_bp not available")
     
     try:
-        app.register_blueprint(campaigns_api_bp)
-    except NameError:
+        from src.api.campaigns_api import campaigns_api_bp
+        blueprints.append(('campaigns_api_bp', campaigns_api_bp, '/api'))
+    except ImportError:
         logging.warning("campaigns_api_bp not available")
+    
+    # Register all available blueprints
+    for name, blueprint, url_prefix in blueprints:
+        try:
+            app.register_blueprint(blueprint, url_prefix=url_prefix)
+            logging.info(f"Registered blueprint: {name}")
+        except Exception as e:
+            logging.warning(f"Could not register blueprint {name}: {e}")
 
 
 def initialize_services(app: Flask):
-    """Initialize all background services"""
-    with app.app_context():
-        try:
-            # Import all models to ensure they're registered with SQLAlchemy
-            from src.models.user import User
-            from src.models.account import Account, AccountUser
-            from src.models.campaign import Campaign
-            from src.models.budget_alert import BudgetAlertModel
-            from src.models.analytics_snapshot import AnalyticsSnapshot
-            from src.models.approval_request import ApprovalRequestModel
-            # Note: Conversation model is imported from services.conversation in the API layer
-            
-            # Initialize database tables
-            db.create_all()
-            
-            # Initialize campaign orchestrator (only if available)
-            if settings.environment != 'testing' and real_google_ads_service is not None:
-                try:
-                    global campaign_orchestrator
-                    campaign_orchestrator = CampaignOrchestrator(real_google_ads_service)
-                    logging.info("Campaign orchestrator initialized successfully")
-                except Exception as e:
-                    logging.warning(f"Could not initialize campaign orchestrator: {e}")
-                    campaign_orchestrator = None
-            
-        except Exception as e:
-            logging.error(f"Error initializing services: {str(e)}")
-            # Don't raise in production - allow app to start with limited functionality
-            if settings.environment == 'development':
-                raise
+    """Initialize application services"""
+    
+    # Initialize Google Ads service
+    try:
+        from src.services.real_google_ads import real_google_ads_service
+        if real_google_ads_service:
+            real_google_ads_service.test_connection()
+            logging.info("Google Ads service initialized successfully")
+    except Exception as e:
+        logging.warning(f"Could not initialize Google Ads service: {e}")
+    
+    # Initialize Campaign Orchestrator
+    try:
+        from src.services.campaign_orchestrator import CampaignOrchestrator
+        if CampaignOrchestrator:
+            logging.info("Campaign Orchestrator service available")
+    except Exception as e:
+        logging.warning(f"Could not initialize Campaign Orchestrator: {e}")
 
 
 def register_error_handlers(app: Flask):
-    """Register global error handlers"""
-    
-    @app.errorhandler(400)
-    def bad_request(error):
-        return {'error': 'Bad request', 'message': str(error)}, 400
-    
-    @app.errorhandler(401)
-    def unauthorized(error):
-        return {'error': 'Unauthorized', 'message': 'Authentication required'}, 401
-    
-    @app.errorhandler(403)
-    def forbidden(error):
-        return {'error': 'Forbidden', 'message': 'Insufficient permissions'}, 403
+    """Register application error handlers"""
     
     @app.errorhandler(404)
     def not_found(error):
-        return {'error': 'Not found', 'message': 'Resource not found'}, 404
+        # Return JSON for API routes, HTML for others
+        if request.path.startswith('/api'):
+            return {'error': 'Not found', 'message': 'Resource not found'}, 404
+        else:
+            # Serve index.html for frontend routes
+            return serve_frontend('')
     
     @app.errorhandler(429)
     def too_many_requests(error):
@@ -227,7 +232,7 @@ def register_request_hooks(app: Flask):
     @app.before_request
     def before_request():
         # Log request
-        if not request.path.startswith('/static'):
+        if not request.path.startswith('/static') and not request.path.startswith('/assets'):
             logging.debug(f"{request.method} {request.path} from {request.remote_addr}")
         
         # Initialize request context
@@ -246,28 +251,58 @@ def register_request_hooks(app: Flask):
         response.headers['X-Frame-Options'] = 'DENY'
         response.headers['X-XSS-Protection'] = '1; mode=block'
         
+        # Add cache headers for static assets
+        if request.path.startswith('/assets') or request.path.endswith(('.js', '.css', '.png', '.jpg', '.svg')):
+            response.headers['Cache-Control'] = 'public, max-age=31536000'
+        
         return response
+
+
+def serve_frontend(path):
+    """Serve React frontend application"""
+    static_folder = os.path.join(os.path.dirname(__file__), 'static')
+    
+    # Always serve index.html for frontend routes
+    index_path = os.path.join(static_folder, 'index.html')
+    if os.path.exists(index_path):
+        return send_file(index_path)
+    else:
+        return "Frontend not built. Run 'npm run build' first.", 404
 
 
 def register_frontend_routes(app: Flask):
     """Register routes for serving frontend application"""
     
+    # Serve static assets (JS, CSS, images, etc.)
+    @app.route('/assets/<path:filename>')
+    def serve_assets(filename):
+        static_folder = os.path.join(os.path.dirname(__file__), 'static', 'assets')
+        return send_from_directory(static_folder, filename)
+    
+    # Serve other static files
+    @app.route('/<path:filename>')
+    def serve_static_file(filename):
+        # List of static file extensions
+        static_extensions = ('.js', '.css', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.woff', '.woff2', '.ttf', '.eot')
+        
+        if filename.endswith(static_extensions) or '.' in filename.split('/')[-1]:
+            static_folder = os.path.join(os.path.dirname(__file__), 'static')
+            if os.path.exists(os.path.join(static_folder, filename)):
+                return send_from_directory(static_folder, filename)
+        
+        # For all other routes, serve the React app
+        return serve_frontend(filename)
+    
+    # Catch-all route for React Router
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
-    def serve_frontend(path):
-        """Serve React frontend application"""
-        static_folder_path = app.static_folder
-        if static_folder_path is None:
-            return "Static folder not configured", 404
-
-        if path != "" and os.path.exists(os.path.join(static_folder_path, path)):
-            return send_from_directory(static_folder_path, path)
-        else:
-            index_path = os.path.join(static_folder_path, 'index.html')
-            if os.path.exists(index_path):
-                return send_from_directory(static_folder_path, 'index.html')
-            else:
-                return "Frontend not built. Run 'npm run build' first.", 404
+    def catch_all(path):
+        # Don't catch API routes
+        if path.startswith('api/'):
+            return {'error': 'Not found'}, 404
+        
+        # Serve the React app
+        return serve_frontend(path)
 
 
 def setup_logging():
