@@ -254,3 +254,15 @@ Thumbs.db
 lane_mcp.log
 app.db
 
+
+# Sensitive files
+.env*
+!.env.example
+*.log
+google-ads.yaml
+*_credentials.json
+*_token.json
+
+# Documentation with potential secrets
+*_FIX.md
+*_TOKEN_SETUP.md
