@@ -42,5 +42,5 @@ COPY . /app/
 # Copy built frontend from the frontend-builder stage
 COPY --from=frontend-builder /app/src/static /app/src/static
 
-# Run the application
+# Run the application (fixed build issue)
 CMD ["python", "src/main_production.py"]
