@@ -1906,35 +1906,50 @@ body {
   }
 }
 
-/* ===== DARK MODE SUPPORT ===== */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --glass-bg: rgba(0, 0, 0, 0.25);
-    --glass-bg-strong: rgba(0, 0, 0, 0.35);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --bg-gradient-main: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1e1b4b 100%);
-  }
+/* ===== FORCE LIGHT MODE - OVERRIDE DARK MODE ===== */
+/* Disable dark mode completely for better readability */
+:root {
+  /* Force light mode colors */
+  --glass-bg: rgba(255, 255, 255, 0.8) !important;
+  --glass-bg-strong: rgba(255, 255, 255, 0.95) !important;
+  --glass-border: rgba(226, 232, 240, 0.5) !important;
+  --bg-gradient-main: linear-gradient(135deg, #f8fafc 0%, #ffffff 50%, #f1f5f9 100%) !important;
+}
 
-  body {
-    color: #f1f5f9;
-  }
+body {
+  color: #1e293b !important;
+  background: var(--bg-gradient-main) !important;
+}
 
-  .card,
-  .metric-card {
-    background: rgba(0, 0, 0, 0.3);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
+.card,
+.metric-card {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(226, 232, 240, 0.5) !important;
+  color: #1e293b !important;
+}
 
-  .table th {
-    background: rgba(0, 0, 0, 0.4);
-  }
+.table th {
+  background: rgba(248, 250, 252, 0.9) !important;
+  color: #1e293b !important;
+}
 
-  .form-input,
-  .form-textarea,
-  .form-select,
-  .chat-input {
-    background: rgba(0, 0, 0, 0.3);
-    color: #f1f5f9;
-    border-color: rgba(255, 255, 255, 0.1);
-  }
+.form-input,
+.form-textarea,
+.form-select,
+.chat-input {
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: #1e293b !important;
+  border-color: rgba(226, 232, 240, 0.5) !important;
+}
+
+/* Force all text to be dark and readable */
+* {
+  color: #1e293b !important;
+}
+
+/* Override any dark backgrounds */
+input, textarea, select, button {
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: #1e293b !important;
+  border-color: rgba(226, 232, 240, 0.5) !important;
 }

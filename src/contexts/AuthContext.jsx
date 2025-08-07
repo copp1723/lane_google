@@ -38,7 +38,17 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     };
 
-    checkAuth();
+    // BYPASS EVERYTHING - AUTO LOGIN
+    const mockUser = {
+      id: '12345',
+      email: 'admin@lane-ai.com',
+      name: 'Admin User',
+      role: 'admin',
+      permissions: ['all']
+    };
+    setUser(mockUser);
+    setLoading(false);
+    // checkAuth();
   }, []);
 
   const login = async (email, password) => {

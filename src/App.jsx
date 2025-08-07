@@ -370,8 +370,9 @@ const App = () => {
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/login" element={<Suspense fallback={<LoadingSpinner />}><LoginPage /></Suspense>} />
-          <Route path="/register" element={<Suspense fallback={<LoadingSpinner />}><RegisterPage /></Suspense>} />
+          {/* BYPASS: Skip login/register, go straight to app */}
+          <Route path="/login" element={<Navigate to="/" replace />} />
+          <Route path="/register" element={<Navigate to="/" replace />} />
           <Route
             path="/*"
             element={

@@ -4,13 +4,67 @@ from google.ads.googleads.errors import GoogleAdsException
 import os
 from dotenv import load_dotenv
 import yaml
+import logging
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 
 google_ads_bp = Blueprint('google_ads', __name__)
 
 # Google Ads client will be initialized when needed
 ads_client = None
+
+
+class GoogleAdsService:
+    """Mock Google Ads service for development and fallback"""
+    
+    def __init__(self):
+        logger.info("Initializing mock Google Ads service")
+        
+    def test_connection(self):
+        """Test connection method for compatibility"""
+        return {
+            'status': 'connected',
+            'service_type': 'mock',
+            'message': 'Mock Google Ads service is active'
+        }
+    
+    def get_accounts(self):
+        """Mock implementation for getting accounts"""
+        return {
+            'accounts': [
+                {
+                    'id': '123-456-7890',
+                    'name': 'Mock Account 1',
+                    'currency': 'USD',
+                    'time_zone': 'America/New_York'
+                }
+            ]
+        }
+    
+    def get_campaigns(self, customer_id):
+        """Mock implementation for getting campaigns"""
+        return {
+            'campaigns': [
+                {
+                    'id': '12345',
+                    'name': 'Mock Campaign 1',
+                    'status': 'ENABLED',
+                    'budget': 1000.0
+                }
+            ]
+        }
+    
+    def get_performance_data(self, customer_id, date_range):
+        """Mock implementation for performance data"""
+        return {
+            'performance': {
+                'impressions': 10000,
+                'clicks': 500,
+                'cost': 250.0,
+                'conversions': 25
+            }
+        }
 
 def get_google_ads_client():
     """Initialize and return Google Ads client"""
