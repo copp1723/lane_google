@@ -7,10 +7,23 @@ import logging
 import os
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
-from google.ads.googleads.client import GoogleAdsClient
-from google.ads.googleads.errors import GoogleAdsException
-from google.api_core import retry
+import yaml
+from pathlib import Path
+
+try:
+    from google.ads.googleads.client import GoogleAdsClient
+    from google.ads.googleads.errors import GoogleAdsException
+    from google.api_core import retry
+    GOOGLE_ADS_AVAILABLE = True
+except ImportError:
+    GOOGLE_ADS_AVAILABLE = False
+    GoogleAdsException = Exception
+    retry = None
+    logger = logging.getLogger(__name__)
+    logger.warning("Google Ads Python client not installed. Install with: pip install google-ads")
+
 import json
+from .google_ads_error_handler import handle_google_ads_error, GoogleAdsErrorHandler, GoogleAdsAPIError
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +37,10 @@ class RealGoogleAdsService:
         
     def _initialize_client(self):
         """Initialize Google Ads client with credentials"""
+        if not GOOGLE_ADS_AVAILABLE:
+            logger.error("Google Ads Python client not installed")
+            return
+            
         try:
             # Load environment variables
             from dotenv import load_dotenv
@@ -40,21 +57,60 @@ class RealGoogleAdsService:
             missing_vars = [var for var in required_env_vars if not os.getenv(var)]
             if missing_vars:
                 logger.error(f"Missing required environment variables: {missing_vars}")
+                logger.info("To get credentials, run: python scripts/generate_google_ads_credentials.py")
                 return
+            
+            # Create configuration dictionary
+            config_dict = {
+                'developer_token': os.getenv('GOOGLE_ADS_DEVELOPER_TOKEN'),
+                'client_id': os.getenv('GOOGLE_ADS_CLIENT_ID'),
+                'client_secret': os.getenv('GOOGLE_ADS_CLIENT_SECRET'),
+                'refresh_token': os.getenv('GOOGLE_ADS_REFRESH_TOKEN'),
+                'use_proto_plus': os.getenv('GOOGLE_ADS_USE_PROTO_PLUS', 'True').lower() == 'true'
+            }
+            
+            # Add login customer ID if provided
+            login_customer_id = os.getenv('GOOGLE_ADS_LOGIN_CUSTOMER_ID')
+            if login_customer_id:
+                # Remove hyphens from customer ID
+                config_dict['login_customer_id'] = login_customer_id.replace('-', '')
+            
+            # Try to initialize client with dict config
+            try:
+                self.client = GoogleAdsClient.load_from_dict(config_dict)
+                logger.info("Google Ads client initialized successfully from environment")
+            except Exception as dict_error:
+                logger.warning(f"Failed to load from dict: {dict_error}")
                 
-            # Initialize client
-            self.client = GoogleAdsClient.load_from_env()
-            logger.info("Google Ads client initialized successfully")
+                # Fallback: Try to load from google-ads.yaml if it exists
+                yaml_path = Path('google-ads.yaml')
+                if yaml_path.exists():
+                    try:
+                        self.client = GoogleAdsClient.load_from_storage(str(yaml_path))
+                        logger.info("Google Ads client initialized from google-ads.yaml")
+                    except Exception as yaml_error:
+                        logger.error(f"Failed to load from yaml: {yaml_error}")
+                        raise
+                else:
+                    raise dict_error
             
         except Exception as e:
             logger.error(f"Failed to initialize Google Ads client: {str(e)}")
+            logger.info("\nTroubleshooting steps:")
+            logger.info("1. Ensure you have valid OAuth2 credentials (not Customer ID)")
+            logger.info("2. Run: python scripts/generate_google_ads_credentials.py")
+            logger.info("3. Add the generated credentials to your .env file")
+            logger.info("4. Install Google Ads client: pip install google-ads")
             self.client = None
     
-    @retry.Retry(predicate=retry.if_transient_error)
+    @handle_google_ads_error
     def get_accessible_customers(self) -> List[Dict[str, Any]]:
         """Get list of accessible Google Ads accounts"""
         if not self.client:
-            raise Exception("Google Ads client not initialized")
+            raise GoogleAdsAPIError(
+                "Google Ads client not initialized. Check your credentials.",
+                error_code="CLIENT_NOT_INITIALIZED"
+            )
             
         try:
             customer_service = self.client.get_service("CustomerService")
@@ -72,7 +128,7 @@ class RealGoogleAdsService:
             return customers
             
         except GoogleAdsException as ex:
-            logger.error(f"Google Ads API error: {ex}")
+            GoogleAdsErrorHandler.log_error_details(ex, "Getting accessible customers")
             raise
         except Exception as e:
             logger.error(f"Error getting accessible customers: {str(e)}")
@@ -116,11 +172,14 @@ class RealGoogleAdsService:
             logger.warning(f"Could not get customer info for {customer_id}: {str(e)}")
             return None
     
-    @retry.Retry(predicate=retry.if_transient_error)
+    @handle_google_ads_error
     def get_campaigns(self, customer_id: str) -> List[Dict[str, Any]]:
         """Get campaigns for a customer"""
         if not self.client:
-            raise Exception("Google Ads client not initialized")
+            raise GoogleAdsAPIError(
+                "Google Ads client not initialized. Check your credentials.",
+                error_code="CLIENT_NOT_INITIALIZED"
+            )
             
         try:
             ga_service = self.client.get_service("GoogleAdsService")
@@ -173,17 +232,20 @@ class RealGoogleAdsService:
             return campaigns
             
         except GoogleAdsException as ex:
-            logger.error(f"Google Ads API error getting campaigns: {ex}")
+            GoogleAdsErrorHandler.log_error_details(ex, f"Getting campaigns for customer {customer_id}")
             raise
         except Exception as e:
             logger.error(f"Error getting campaigns: {str(e)}")
             raise
     
-    @retry.Retry(predicate=retry.if_transient_error)
+    @handle_google_ads_error
     def create_campaign(self, customer_id: str, campaign_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new Google Ads campaign"""
         if not self.client:
-            raise Exception("Google Ads client not initialized")
+            raise GoogleAdsAPIError(
+                "Google Ads client not initialized. Check your credentials.",
+                error_code="CLIENT_NOT_INITIALIZED"
+            )
             
         try:
             # Get services
@@ -246,18 +308,21 @@ class RealGoogleAdsService:
             }
             
         except GoogleAdsException as ex:
-            logger.error(f"Google Ads API error creating campaign: {ex}")
+            GoogleAdsErrorHandler.log_error_details(ex, f"Creating campaign for customer {customer_id}")
             raise
         except Exception as e:
             logger.error(f"Error creating campaign: {str(e)}")
             raise
     
-    @retry.Retry(predicate=retry.if_transient_error)
+    @handle_google_ads_error
     def update_campaign_budget(self, customer_id: str, campaign_id: str, 
                               new_budget_amount: float) -> bool:
         """Update campaign budget"""
         if not self.client:
-            raise Exception("Google Ads client not initialized")
+            raise GoogleAdsAPIError(
+                "Google Ads client not initialized. Check your credentials.",
+                error_code="CLIENT_NOT_INITIALIZED"
+            )
             
         try:
             # Get campaign budget resource name
@@ -304,12 +369,15 @@ class RealGoogleAdsService:
             logger.error(f"Error updating campaign budget: {str(e)}")
             raise
     
-    @retry.Retry(predicate=retry.if_transient_error)
+    @handle_google_ads_error
     def get_performance_metrics(self, customer_id: str, campaign_id: str = None,
                                start_date: str = None, end_date: str = None) -> Dict[str, Any]:
         """Get performance metrics for campaigns"""
         if not self.client:
-            raise Exception("Google Ads client not initialized")
+            raise GoogleAdsAPIError(
+                "Google Ads client not initialized. Check your credentials.",
+                error_code="CLIENT_NOT_INITIALIZED"
+            )
             
         try:
             ga_service = self.client.get_service("GoogleAdsService")
@@ -423,7 +491,7 @@ class RealGoogleAdsService:
     def _update_campaign_status(self, customer_id: str, campaign_id: str, status: str) -> bool:
         """Update campaign status"""
         if not self.client:
-            raise Exception("Google Ads client not initialized")
+            raise Exception("Google Ads client not initialized. Check your credentials.")
             
         try:
             campaign_service = self.client.get_service("CampaignService")

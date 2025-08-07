@@ -64,17 +64,21 @@ class OpenRouterClient:
                 "stream": stream
             }
             
-            response = await self.client.post(
-                f"{self.base_url}/chat/completions",
-                json=payload
-            )
-            response.raise_for_status()
-            
-            result = response.json()
-            
-            logger.info(f"OpenRouter API call successful - Model: {model}, Usage: {result.get('usage', {})}")
-            
-            return result
+            if stream:
+                # Handle streaming response
+                return await self._handle_streaming_response(payload)
+            else:
+                response = await self.client.post(
+                    f"{self.base_url}/chat/completions",
+                    json=payload
+                )
+                response.raise_for_status()
+                
+                result = response.json()
+                
+                logger.info(f"OpenRouter API call successful - Model: {model}, Usage: {result.get('usage', {})}")
+                
+                return result
             
         except httpx.HTTPStatusError as e:
             logger.error(f"OpenRouter API error: {e.response.status_code} - {e.response.text}")
@@ -85,6 +89,63 @@ class OpenRouterClient:
             logger.error(f"Unexpected OpenRouter error: {str(e)}")
             # Fallback to mock on any error
             return self._mock_response(messages, model)
+    
+    async def _handle_streaming_response(self, payload: Dict[str, Any]) -> AsyncGenerator[Dict[str, Any], None]:
+        """Handle streaming response from OpenRouter"""
+        try:
+            async with self.client.stream(
+                "POST",
+                f"{self.base_url}/chat/completions",
+                json=payload
+            ) as response:
+                response.raise_for_status()
+                
+                async for line in response.aiter_lines():
+                    if line.startswith("data: "):
+                        if line == "data: [DONE]":
+                            break
+                        
+                        try:
+                            chunk_data = json.loads(line[6:])  # Remove "data: " prefix
+                            yield chunk_data
+                        except json.JSONDecodeError as e:
+                            logger.warning(f"Failed to parse streaming chunk: {e}")
+                            continue
+                            
+        except httpx.HTTPStatusError as e:
+            logger.error(f"Streaming error: {e.response.status_code} - {e.response.text}")
+            yield {"error": f"API error: {e.response.status_code}"}
+        except Exception as e:
+            logger.error(f"Unexpected streaming error: {str(e)}")
+            yield {"error": str(e)}
+    
+    async def chat_completion_stream(
+        self,
+        messages: List[Dict[str, str]],
+        model: str = "anthropic/claude-3.5-sonnet",
+        max_tokens: int = 4000,
+        temperature: float = 0.7
+    ) -> AsyncGenerator[Dict[str, Any], None]:
+        """
+        Create streaming chat completion with OpenRouter
+        """
+        
+        if not self.api_key:
+            # Fallback to mock streaming response
+            async for chunk in self._mock_streaming_response(messages, model):
+                yield chunk
+            return
+        
+        payload = {
+            "model": model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "stream": True
+        }
+        
+        async for chunk in self._handle_streaming_response(payload):
+            yield chunk
     
     async def chat_with_agent(
         self, 
@@ -215,6 +276,35 @@ class OpenRouterClient:
             "usage": {"prompt_tokens": 50, "completion_tokens": 30, "total_tokens": 80},
             "model": f"mock-{model}"
         }
+    
+    async def _mock_streaming_response(self, messages: List[Dict], model: str) -> AsyncGenerator[Dict[str, Any], None]:
+        """Mock streaming response for development"""
+        import random
+        
+        responses = [
+            "I understand you want to create a campaign. Let me help you with that.",
+            "Based on your requirements, I recommend a Search campaign targeting high-intent keywords.",
+            "For your budget, I suggest starting with $50-100 per day to test performance.",
+            "Your target audience should focus on users actively searching for your products.",
+            "I'll create a comprehensive campaign structure with multiple ad groups for better targeting."
+        ]
+        
+        response = random.choice(responses)
+        words = response.split()
+        
+        # Simulate streaming by yielding words
+        for i, word in enumerate(words):
+            chunk = {
+                "choices": [{
+                    "delta": {
+                        "content": word + " " if i < len(words) - 1 else word
+                    },
+                    "finish_reason": None if i < len(words) - 1 else "stop"
+                }],
+                "model": f"mock-{model}"
+            }
+            yield chunk
+            await asyncio.sleep(0.05)  # Simulate network delay
     
     async def close(self):
         """Close the HTTP client"""

@@ -56,6 +56,8 @@ def chat_stream():
         data = request.get_json()
         message = data.get('message')
         conversation_id = data.get('conversation_id')
+        conversation_history = data.get('conversation_history', [])
+        context_type = data.get('context_type', 'general')
         
         if not message:
             return jsonify({
@@ -65,11 +67,28 @@ def chat_stream():
         
         def generate():
             try:
-                for chunk in ai_agent_service.stream_message(
-                    message=message,
-                    conversation_id=conversation_id
-                ):
-                    yield f"data: {json.dumps(chunk)}\n\n"
+                # Create async event loop for streaming
+                import asyncio
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                
+                async def stream_wrapper():
+                    async for chunk in ai_agent_service.stream_chat(
+                        message=message,
+                        conversation_history=conversation_history,
+                        context_type=context_type
+                    ):
+                        yield chunk
+                
+                # Run the async generator
+                gen = stream_wrapper()
+                while True:
+                    try:
+                        chunk = loop.run_until_complete(gen.__anext__())
+                        yield f"data: {json.dumps(chunk)}\n\n"
+                    except StopAsyncIteration:
+                        break
+                    
             except Exception as e:
                 logger.error(f"Error in streaming: {str(e)}")
                 yield f"data: {json.dumps({'error': str(e)})}\n\n"
@@ -80,7 +99,8 @@ def chat_stream():
             headers={
                 'Cache-Control': 'no-cache',
                 'Connection': 'keep-alive',
-                'Access-Control-Allow-Origin': '*'
+                'Access-Control-Allow-Origin': '*',
+                'X-Accel-Buffering': 'no'  # Disable Nginx buffering
             }
         )
         
@@ -167,27 +187,129 @@ def delete_conversation(conversation_id):
 @ai_agent_bp.route('/generate-campaign', methods=['POST'])
 @token_required
 def generate_campaign():
-    """Generate campaign from AI brief"""
+    """Generate campaign from conversation or brief"""
     try:
         data = request.get_json()
+        conversation_id = data.get('conversation_id')
+        messages = data.get('messages', [])
         brief = data.get('brief')
         
-        if not brief:
+        if not conversation_id and not messages and not brief:
             return jsonify({
                 'success': False,
-                'error': 'Campaign brief is required'
+                'error': 'Either conversation_id, messages, or brief is required'
             }), 400
         
-        campaign = ai_agent_service.generate_campaign_from_brief(brief)
+        # Import campaign generator
+        from src.services.campaign_generator import get_campaign_generator
+        generator = get_campaign_generator()
         
-        return jsonify({
-            'success': True,
-            'campaign': campaign
-        }), 200
+        # Generate campaign using AI workflow
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        if messages or conversation_id:
+            # Generate from conversation
+            result = loop.run_until_complete(
+                generator.generate_from_conversation(
+                    conversation_id=conversation_id or 'new',
+                    messages=messages
+                )
+            )
+        else:
+            # Generate from brief directly
+            result = loop.run_until_complete(
+                generator._create_campaign_structure({'strategy': brief}, brief)
+            )
+        
+        return jsonify(result), 200 if result.get('success') else 400
         
     except Exception as e:
         logger.error(f"Error generating campaign: {str(e)}")
         return jsonify({
             'success': False,
-            'error': 'Failed to generate campaign'
+            'error': f'Failed to generate campaign: {str(e)}'
+        }), 500
+
+
+@ai_agent_bp.route('/keyword-research', methods=['POST'])
+@token_required
+def keyword_research():
+    """AI-powered keyword research"""
+    try:
+        data = request.get_json()
+        business_info = data.get('business_info')
+        target_market = data.get('target_market')
+        competitors = data.get('competitors', [])
+        
+        if not business_info:
+            return jsonify({
+                'success': False,
+                'error': 'Business information is required'
+            }), 400
+        
+        # Import keyword research service
+        from src.services.keyword_research_ai import ai_keyword_research
+        
+        # Run keyword research
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        result = loop.run_until_complete(
+            ai_keyword_research.research_keywords(
+                business_info=business_info,
+                target_market=target_market,
+                competitors=competitors
+            )
+        )
+        
+        return jsonify(result), 200 if result.get('success') else 400
+        
+    except Exception as e:
+        logger.error(f"Error in keyword research: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Keyword research failed: {str(e)}'
+        }), 500
+
+
+@ai_agent_bp.route('/optimize-keywords', methods=['POST'])
+@token_required
+def optimize_keywords():
+    """Optimize existing keywords using AI"""
+    try:
+        data = request.get_json()
+        performance_data = data.get('performance_data', [])
+        business_goals = data.get('business_goals', {})
+        
+        if not performance_data:
+            return jsonify({
+                'success': False,
+                'error': 'Performance data is required'
+            }), 400
+        
+        # Import keyword research service
+        from src.services.keyword_research_ai import ai_keyword_research
+        
+        # Run optimization
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        result = loop.run_until_complete(
+            ai_keyword_research.optimize_existing_keywords(
+                performance_data=performance_data,
+                business_goals=business_goals
+            )
+        )
+        
+        return jsonify(result), 200 if result.get('success') else 400
+        
+    except Exception as e:
+        logger.error(f"Error optimizing keywords: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Keyword optimization failed: {str(e)}'
         }), 500

@@ -10,11 +10,16 @@ load_dotenv()
 from flask import Flask, send_from_directory
 from flask_cors import CORS
 from src.config.database import db
-# from src.routes.user import user_bp  # Route not found
-# from src.routes.ai_agent import ai_agent_bp  # Route not found
-# from src.routes.google_ads import google_ads_bp  # Route not found
-# from src.routes.campaigns import campaigns_bp  # Route not found
+
+# Import route blueprints
+from src.routes.user import user_bp
+from src.routes.google_ads import google_ads_bp
+from src.routes.campaigns import campaigns_bp
 from src.api.dashboard_apis import dashboard_bp
+
+# Import API blueprints
+from src.api.auth_api import auth_bp
+from src.api.campaigns_api import campaigns_api_bp
 
 # Import new services and APIs
 from src.api.budget_pacing_api import budget_pacing_bp
@@ -40,11 +45,15 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', secrets.token_urlsafe(32))
 CORS(app, origins="*")
 
 # Register blueprints
-# app.register_blueprint(user_bp, url_prefix='/api')  # Route not found
+app.register_blueprint(user_bp, url_prefix='/api')
 app.register_blueprint(ai_agent_bp, url_prefix='/api/ai')
-# app.register_blueprint(google_ads_bp, url_prefix='/api/google-ads')  # Route not found
-# app.register_blueprint(campaigns_bp, url_prefix='/api/campaigns')  # Route not found
+app.register_blueprint(google_ads_bp, url_prefix='/api/google-ads')
+app.register_blueprint(campaigns_bp, url_prefix='/api/campaigns')
 app.register_blueprint(dashboard_bp)
+
+# Register auth and campaigns API blueprints
+app.register_blueprint(auth_bp, url_prefix='/api/auth')
+app.register_blueprint(campaigns_api_bp)
 
 # Register new service blueprints
 app.register_blueprint(budget_pacing_bp, url_prefix='/api/budget')
@@ -88,18 +97,28 @@ with app.app_context():
 def serve(path):
     static_folder_path = app.static_folder
     if static_folder_path is None:
-            return "Static folder not configured", 404
-
-    if path != "" and os.path.exists(os.path.join(static_folder_path, path)):
+        return "Static folder not configured", 404
+    
+    # Handle API routes first - don't serve static files for API calls
+    if path.startswith('api/'):
+        return "Not Found", 404
+    
+    # Try to serve the file directly if it exists
+    if path and os.path.exists(os.path.join(static_folder_path, path)):
+        # Special handling for assets folder
+        if path.startswith('assets/'):
+            return send_from_directory(static_folder_path, path)
         return send_from_directory(static_folder_path, path)
+    
+    # For any other path, serve index.html (for React routing)
+    index_path = os.path.join(static_folder_path, 'index.html')
+    if os.path.exists(index_path):
+        return send_from_directory(static_folder_path, 'index.html')
     else:
-        index_path = os.path.join(static_folder_path, 'index.html')
-        if os.path.exists(index_path):
-            return send_from_directory(static_folder_path, 'index.html')
-        else:
-            return "index.html not found", 404
+        return "index.html not found", 404
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    port = int(os.getenv('FLASK_RUN_PORT', 5001))
+    app.run(host='0.0.0.0', port=port, debug=True)
 

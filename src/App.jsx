@@ -1,17 +1,22 @@
 import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { 
   BarChart3, MessageCircle, Zap, Settings, Search, 
   ChevronRight, Command, X, Loader2, Home, 
   TrendingUp, DollarSign, Target, Users, 
   Shield, Bell, HelpCircle, Menu, ChevronDown,
-  Layers, Eye, Code
+  Layers, Eye, Code, LogOut, User
 } from 'lucide-react'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
+import ProtectedRoute from './components/auth/ProtectedRoute'
 
 // Lazy load components for performance
 const DashboardView = lazy(() => import('./components/views/DashboardView'))
 const CampaignsView = lazy(() => import('./components/views/CampaignsView'))
 const ChatView = lazy(() => import('./components/views/ChatView'))
 const SettingsView = lazy(() => import('./components/views/SettingsView'))
+const LoginPage = lazy(() => import('./components/auth/LoginPage'))
+const RegisterPage = lazy(() => import('./components/auth/RegisterPage'))
 
 // View mode options
 const VIEW_MODES = {
@@ -126,13 +131,15 @@ const CommandPalette = ({ isOpen, onClose, onExecuteCommand }) => {
   )
 }
 
-// Main App Component
-const App = () => {
+// Main App Content Component
+const AppContent = () => {
+  const { user, logout } = useAuth()
   const [activeTab, setActiveTab] = useState('dashboard')
   const [viewMode, setViewMode] = useState(VIEW_MODES.SIMPLE)
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [notifications, setNotifications] = useState(3)
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
 
   // Navigation items - consolidated to 4 main tabs
   const navItems = [
@@ -154,6 +161,7 @@ const App = () => {
       if (e.key === 'Escape') {
         setIsCommandPaletteOpen(false)
         setIsMobileMenuOpen(false)
+        setIsProfileMenuOpen(false)
       }
     }
 
@@ -240,6 +248,56 @@ const App = () => {
             <button className="icon-button" aria-label="Help">
               <HelpCircle size={20} />
             </button>
+            
+            {/* User Profile Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                className="user-profile-button"
+              >
+                <div className="user-avatar">
+                  <User size={16} />
+                </div>
+                <div className="user-info">
+                  <span className="user-name">
+                    {user?.first_name || 'User'}
+                  </span>
+                  <span className="user-email hidden md:block">
+                    {user?.email || 'user@example.com'}
+                  </span>
+                </div>
+                <ChevronDown size={16} className="text-gray-500" />
+              </button>
+
+              <div className={`profile-dropdown ${isProfileMenuOpen ? 'open' : ''}`}>
+                <div className="p-3 border-b border-glass-border">
+                  <p className="text-sm font-medium text-gray-900">{user?.first_name} {user?.last_name}</p>
+                  <p className="text-xs text-gray-500">{user?.email}</p>
+                </div>
+                <div className="p-1">
+                  <button
+                    onClick={() => {
+                      setActiveTab('settings')
+                      setIsProfileMenuOpen(false)
+                    }}
+                    className="dropdown-item"
+                  >
+                    <Settings size={16} />
+                    Settings
+                  </button>
+                  <button
+                    onClick={() => {
+                      logout()
+                      setIsProfileMenuOpen(false)
+                    }}
+                    className="dropdown-item danger"
+                  >
+                    <LogOut size={16} />
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </header>
@@ -303,6 +361,28 @@ const App = () => {
         onExecuteCommand={executeCommand}
       />
     </div>
+  )
+}
+
+// Main App Component with Routing
+const App = () => {
+  return (
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Suspense fallback={<LoadingSpinner />}><LoginPage /></Suspense>} />
+          <Route path="/register" element={<Suspense fallback={<LoadingSpinner />}><RegisterPage /></Suspense>} />
+          <Route
+            path="/*"
+            element={
+              <ProtectedRoute>
+                <AppContent />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </Router>
+    </AuthProvider>
   )
 }
 

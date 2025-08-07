@@ -14,7 +14,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import threading
 
 # Configuration
-CLIENT_ID = "800-216-1531"  # Your provided client ID
+CLIENT_ID = None  # Will be set from command line or user input
 REDIRECT_PORT = 8080
 REDIRECT_URI = f"http://localhost:{REDIRECT_PORT}"
 SCOPES = ["https://www.googleapis.com/auth/adwords"]
@@ -23,10 +23,38 @@ print("=" * 60)
 print("Google Ads API OAuth2 Setup")
 print("=" * 60)
 
-# Check if client secret is provided
-if len(sys.argv) > 1:
-    CLIENT_SECRET = sys.argv[1]
+# Check if client ID and secret are provided via command line
+if len(sys.argv) > 2:
+    CLIENT_ID = sys.argv[1]
+    CLIENT_SECRET = sys.argv[2]
 else:
+    print("\n⚠️  IMPORTANT: You need OAuth2 credentials from Google Cloud Console")
+    print("\nSteps to get OAuth2 credentials:")
+    print("1. Go to: https://console.cloud.google.com/")
+    print("2. Select your project (or create a new one)")
+    print("3. Enable the Google Ads API:")
+    print("   - Go to: APIs & Services → Library")
+    print("   - Search for 'Google Ads API'")
+    print("   - Click on it and press 'Enable'")
+    print("4. Create OAuth 2.0 credentials:")
+    print("   - Go to: APIs & Services → Credentials")
+    print("   - Click '+ CREATE CREDENTIALS' → 'OAuth client ID'")
+    print("   - Application type: 'Web application'")
+    print("   - Name: 'Lane MCP Google Ads Integration' (or any name)")
+    print(f"   - Authorized redirect URIs: Add 'http://localhost:{REDIRECT_PORT}'")
+    print("   - Click 'CREATE'")
+    print("5. Copy the Client ID and Client Secret\n")
+    
+    if not CLIENT_ID:
+        print("The Client ID should look like: XXXXXXXXXX.apps.googleusercontent.com")
+        CLIENT_ID = input("Enter your OAuth2 Client ID: ").strip()
+    
+    if not CLIENT_ID:
+        print("❌ Client ID is required!")
+        sys.exit(1)
+
+# Check if client secret is provided
+if 'CLIENT_SECRET' not in locals():
     print("\n⚠️  IMPORTANT: You need to get your Client Secret from Google Cloud Console")
     print("\nSteps to get Client Secret:")
     print("1. Go to: https://console.cloud.google.com/")
@@ -107,7 +135,7 @@ auth_params = {
 auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(auth_params)}"
 
 print(f"\n📋 Starting OAuth2 flow...")
-print(f"   Client ID: {CLIENT_ID}")
+print(f"   Client ID: {CLIENT_ID[:30]}..." if len(CLIENT_ID) > 30 else f"   Client ID: {CLIENT_ID}")
 print(f"   Redirect URI: {REDIRECT_URI}")
 
 # Start the callback server in a separate thread
@@ -172,10 +200,14 @@ try:
     with open(credentials_file, 'w') as f:
         f.write("# Google Ads API Credentials\n")
         f.write("# Add these to your .env file or Render environment variables\n\n")
-        f.write(f"GOOGLE_ADS_DEVELOPER_TOKEN=T3WOJXJ3JgRJ1Wg-1wd4Kg\n")
+        f.write("# Get your developer token from: https://ads.google.com/aw/apicenter\n")
+        f.write("GOOGLE_ADS_DEVELOPER_TOKEN=<your-developer-token>\n\n")
+        f.write("# OAuth2 credentials from Google Cloud Console\n")
         f.write(f"GOOGLE_ADS_CLIENT_ID={CLIENT_ID}\n")
         f.write(f"GOOGLE_ADS_CLIENT_SECRET={CLIENT_SECRET}\n")
-        f.write(f"GOOGLE_ADS_REFRESH_TOKEN={refresh_token}\n")
+        f.write(f"GOOGLE_ADS_REFRESH_TOKEN={refresh_token}\n\n")
+        f.write("# Optional: Your Google Ads Manager Account Customer ID (without hyphens)\n")
+        f.write("# GOOGLE_ADS_LOGIN_CUSTOMER_ID=1234567890\n")
     
     print(f"\n📄 Credentials also saved to: {credentials_file}")
     print("\n⚠️  IMPORTANT:")

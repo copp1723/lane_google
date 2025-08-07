@@ -11,7 +11,7 @@ from src.services.budget_pacing import budget_pacing_service
 from src.models.campaign import Campaign
 from src.models.budget_alert import BudgetAlertModel
 from src.config.database import db
-from src.utils.responses import APIResponse
+from src.utils.responses import success_response, error_response, not_found_response, forbidden_response, server_error_response, unauthorized_response, validation_error_response
 
 logger = logging.getLogger(__name__)
 
@@ -27,15 +27,15 @@ def get_budget_status(campaign_id):
         # Check campaign ownership
         campaign = Campaign.query.get(campaign_id)
         if not campaign:
-            return APIResponse.error('Campaign not found', 404)
+            return not_found_response('Campaign not found')
         
         if campaign.customer_id != current_user.customer_id:
-            return APIResponse.error('Unauthorized', 403)
-        
+            return forbidden_response('Unauthorized')
+
         # Get current pacing result
         pacing_result = budget_pacing_service.check_campaign_budget(campaign_id)
-        
-        return APIResponse.success(data={
+
+        return success_response(data={
             'campaign_id': campaign_id,
             'campaign_name': campaign.name,
             'budget_amount': campaign.budget_amount,
@@ -48,10 +48,10 @@ def get_budget_status(campaign_id):
             'adjustment_factor': pacing_result.adjustment_factor,
             'confidence_score': pacing_result.confidence_score
         })
-        
+
     except Exception as e:
         logger.error(f'Error getting budget status: {str(e)}')
-        return APIResponse.error(f'Failed to get budget status: {str(e)}', 500)
+        return server_error_response(f'Failed to get budget status: {str(e)}')
 
 
 @budget_pacing_bp.route('/campaigns/<campaign_id>/budget/recommendations', methods=['GET'])
@@ -62,19 +62,19 @@ def get_budget_recommendations(campaign_id):
         # Check campaign ownership
         campaign = Campaign.query.get(campaign_id)
         if not campaign:
-            return APIResponse.error('Campaign not found', 404)
-        
+            return not_found_response('Campaign not found')
+
         if campaign.customer_id != current_user.customer_id:
-            return APIResponse.error('Unauthorized', 403)
-        
+            return forbidden_response('Unauthorized')
+
         # Get recommendations
         recommendations = budget_pacing_service.get_pacing_recommendations(campaign_id)
-        
-        return APIResponse.success(data=recommendations)
-        
+
+        return success_response(data=recommendations)
+
     except Exception as e:
         logger.error(f'Error getting recommendations: {str(e)}')
-        return APIResponse.error(f'Failed to get recommendations: {str(e)}', 500)
+        return server_error_response(f'Failed to get recommendations: {str(e)}')
 
 
 @budget_pacing_bp.route('/campaigns/<campaign_id>/budget/alerts', methods=['GET'])
@@ -85,33 +85,33 @@ def get_budget_alerts(campaign_id):
         # Check campaign ownership
         campaign = Campaign.query.get(campaign_id)
         if not campaign:
-            return APIResponse.error('Campaign not found', 404)
-        
+            return not_found_response('Campaign not found')
+
         if campaign.customer_id != current_user.customer_id:
-            return APIResponse.error('Unauthorized', 403)
-        
+            return forbidden_response('Unauthorized')
+
         # Get alerts with optional filtering
         resolved = request.args.get('resolved', 'false').lower() == 'true'
         severity = request.args.get('severity')
-        
+
         query = BudgetAlertModel.query.filter_by(campaign_id=campaign_id)
-        
+
         if not resolved:
             query = query.filter_by(resolved=False)
-        
+
         if severity:
             query = query.filter_by(severity=severity)
-        
+
         alerts = query.order_by(BudgetAlertModel.created_at.desc()).limit(50).all()
-        
-        return APIResponse.success(data={
+
+        return success_response(data={
             'alerts': [alert.to_dict() for alert in alerts],
             'count': len(alerts)
         })
-        
+
     except Exception as e:
         logger.error(f'Error getting alerts: {str(e)}')
-        return APIResponse.error(f'Failed to get alerts: {str(e)}', 500)
+        return server_error_response(f'Failed to get alerts: {str(e)}')
 
 
 @budget_pacing_bp.route('/campaigns/<campaign_id>/budget/alerts/<alert_id>/resolve', methods=['POST'])
@@ -122,31 +122,31 @@ def resolve_budget_alert(campaign_id, alert_id):
         # Check campaign ownership
         campaign = Campaign.query.get(campaign_id)
         if not campaign:
-            return APIResponse.error('Campaign not found', 404)
-        
+            return not_found_response('Campaign not found')
+
         if campaign.customer_id != current_user.customer_id:
-            return APIResponse.error('Unauthorized', 403)
-        
+            return forbidden_response('Unauthorized')
+
         # Get and resolve alert
         alert = BudgetAlertModel.query.filter_by(
             id=alert_id,
             campaign_id=campaign_id
         ).first()
-        
+
         if not alert:
-            return APIResponse.error('Alert not found', 404)
-        
+            return not_found_response('Alert not found')
+
         alert.resolve()
         db.session.commit()
-        
-        return APIResponse.success(data={
+
+        return success_response(data={
             'message': 'Alert resolved successfully',
             'alert': alert.to_dict()
         })
-        
+
     except Exception as e:
         logger.error(f'Error resolving alert: {str(e)}')
-        return APIResponse.error(f'Failed to resolve alert: {str(e)}', 500)
+        return server_error_response(f'Failed to resolve alert: {str(e)}')
 
 
 @budget_pacing_bp.route('/campaigns/<campaign_id>/budget/update', methods=['POST'])
@@ -157,44 +157,44 @@ def update_campaign_budget(campaign_id):
         # Check campaign ownership
         campaign = Campaign.query.get(campaign_id)
         if not campaign:
-            return APIResponse.error('Campaign not found', 404)
-        
+            return not_found_response('Campaign not found')
+
         if campaign.customer_id != current_user.customer_id:
-            return APIResponse.error('Unauthorized', 403)
-        
+            return forbidden_response('Unauthorized')
+
         # Get update data
         data = request.get_json()
-        
+
         # Update allowed fields
         if 'budget_amount' in data:
             campaign.budget_amount = float(data['budget_amount'])
-        
+
         if 'pacing_strategy' in data:
             valid_strategies = ['linear', 'accelerated', 'conservative', 'adaptive']
             if data['pacing_strategy'] not in valid_strategies:
-                return APIResponse.error(f'Invalid pacing strategy. Must be one of: {valid_strategies}', 400)
+                return validation_error_response({'pacing_strategy': f'Invalid pacing strategy. Must be one of: {valid_strategies}'})
             campaign.pacing_strategy = data['pacing_strategy']
-        
+
         if 'billing_period_start' in data:
             campaign.billing_period_start = datetime.fromisoformat(data['billing_period_start'])
-        
+
         if 'billing_period_end' in data:
             campaign.billing_period_end = datetime.fromisoformat(data['billing_period_end'])
-        
+
         db.session.commit()
-        
+
         # Trigger immediate budget check
         pacing_result = budget_pacing_service.check_campaign_budget(campaign_id)
-        
-        return APIResponse.success(data={
+
+        return success_response(data={
             'message': 'Budget updated successfully',
             'campaign': campaign.to_dict(),
             'pacing_status': pacing_result.pacing_status.value
         })
-        
+
     except Exception as e:
         logger.error(f'Error updating budget: {str(e)}')
-        return APIResponse.error(f'Failed to update budget: {str(e)}', 500)
+        return server_error_response(f'Failed to update budget: {str(e)}')
 
 
 @budget_pacing_bp.route('/budget/overview', methods=['GET'])
@@ -241,11 +241,11 @@ def get_budget_overview():
         
         overview['status_distribution'] = status_counts
         
-        return APIResponse.success(data=overview)
-        
+        return success_response(data=overview)
+
     except Exception as e:
         logger.error(f'Error getting budget overview: {str(e)}')
-        return APIResponse.error(f'Failed to get budget overview: {str(e)}', 500)
+        return server_error_response(f'Failed to get budget overview: {str(e)}')
 
 
 # Alert webhook endpoint for external notifications
@@ -257,18 +257,18 @@ def budget_alert_webhook():
         # For now, we'll use a simple API key check
         api_key = request.headers.get('X-API-Key')
         if api_key != 'your-webhook-api-key':  # Replace with config value
-            return APIResponse.error('Unauthorized', 401)
-        
+            return unauthorized_response('Unauthorized')
+
         data = request.get_json()
-        
+
         # Process the alert
         logger.info(f"Received budget alert webhook: {data}")
-        
+
         # You can add custom processing here
         # For example, send email notifications, update external systems, etc.
-        
-        return APIResponse.success(data={'message': 'Alert processed successfully'})
-        
+
+        return success_response(data={'message': 'Alert processed successfully'})
+
     except Exception as e:
         logger.error(f'Error processing webhook: {str(e)}')
-        return APIResponse.error(f'Failed to process webhook: {str(e)}', 500)
+        return server_error_response(f'Failed to process webhook: {str(e)}')

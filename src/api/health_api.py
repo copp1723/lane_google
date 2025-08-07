@@ -6,7 +6,7 @@ Provides system health checks and monitoring endpoints
 from flask import Blueprint, jsonify, request
 import logging
 from src.services.health_monitor import health_monitor
-from src.utils.responses import APIResponse
+from src.utils.responses import success_response, error_response, server_error_response, unauthorized_response, not_found_response
 import asyncio
 
 logger = logging.getLogger(__name__)
@@ -26,15 +26,15 @@ def health_check():
         
         # Return appropriate HTTP status code
         if health_status['status'] == 'unhealthy':
-            return APIResponse.success(data=health_status, status_code=503)
+            return success_response(data=health_status, status_code=503)
         elif health_status['status'] == 'degraded':
-            return APIResponse.success(data=health_status, status_code=200)
+            return success_response(data=health_status, status_code=200)
         else:
-            return APIResponse.success(data=health_status)
-            
+            return success_response(data=health_status)
+
     except Exception as e:
         logger.error(f'Health check error: {str(e)}')
-        return APIResponse.error('Health check failed', 503)
+        return error_response('Health check failed', 503)
 
 
 @health_bp.route('/health/detailed', methods=['GET'])
@@ -48,18 +48,18 @@ def detailed_health_check():
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             basic_health = loop.run_until_complete(health_monitor.get_health_status(detailed=False))
-            return APIResponse.success(data=basic_health)
-        
+            return success_response(data=basic_health)
+
         # Run detailed health check
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         detailed_health = loop.run_until_complete(health_monitor.get_health_status(detailed=True))
-        
-        return APIResponse.success(data=detailed_health)
-        
+
+        return success_response(data=detailed_health)
+
     except Exception as e:
         logger.error(f'Detailed health check error: {str(e)}')
-        return APIResponse.error('Health check failed', 503)
+        return error_response('Health check failed', 503)
 
 
 @health_bp.route('/health/metrics', methods=['GET'])
@@ -67,11 +67,11 @@ def health_metrics():
     """Get health metrics for monitoring dashboards"""
     try:
         metrics = health_monitor.get_health_metrics()
-        return APIResponse.success(data=metrics)
-        
+        return success_response(data=metrics)
+
     except Exception as e:
         logger.error(f'Health metrics error: {str(e)}')
-        return APIResponse.error('Failed to get health metrics', 500)
+        return server_error_response('Failed to get health metrics')
 
 
 @health_bp.route('/health/diagnostic', methods=['POST'])
@@ -81,18 +81,18 @@ def run_diagnostic():
         # Require authentication or API key
         api_key = request.headers.get('X-API-Key')
         if api_key != 'your-admin-api-key':  # Replace with config
-            return APIResponse.error('Unauthorized', 401)
-        
+            return unauthorized_response('Unauthorized')
+
         # Run diagnostic
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         diagnostic_results = loop.run_until_complete(health_monitor.run_diagnostic())
-        
-        return APIResponse.success(data=diagnostic_results)
-        
+
+        return success_response(data=diagnostic_results)
+
     except Exception as e:
         logger.error(f'Diagnostic error: {str(e)}')
-        return APIResponse.error('Diagnostic failed', 500)
+        return server_error_response('Diagnostic failed')
 
 
 @health_bp.route('/health/services/<service_name>', methods=['GET'])
@@ -107,17 +107,17 @@ def check_service_health(service_name):
         # Extract service health
         if service_name in health_status.get('services', {}):
             service_health = health_status['services'][service_name]
-            return APIResponse.success(data={
+            return success_response(data={
                 'service': service_name,
                 'health': service_health,
                 'overall_status': health_status['status']
             })
         else:
-            return APIResponse.error(f'Service {service_name} not found', 404)
-            
+            return not_found_response(f'Service {service_name} not found')
+
     except Exception as e:
         logger.error(f'Service health check error: {str(e)}')
-        return APIResponse.error('Health check failed', 503)
+        return error_response('Health check failed', 503)
 
 
 # Prometheus-style metrics endpoint

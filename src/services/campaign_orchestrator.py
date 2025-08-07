@@ -12,7 +12,7 @@ from enum import Enum
 from dataclasses import dataclass, field
 import json
 from src.config.database import db
-# GoogleAdsAgent not implemented yet
+from src.services.google_ads_agent import GoogleAdsAgent, AgentRole as GoogleAdsAgentRole, create_agent
 from src.services.real_google_ads import RealGoogleAdsService
 
 logger = logging.getLogger(__name__)
@@ -92,12 +92,11 @@ class CampaignOrchestrator:
     def _initialize_agents(self):
         """Initialize specialized agents"""
         # Create specialized agents for each role
-        # TODO: Implement GoogleAdsAgent
-        # self.agents[AgentRole.STRATEGIST] = GoogleAdsAgent()
-        # self.agents[AgentRole.CREATOR] = GoogleAdsAgent()
-        # self.agents[AgentRole.OPTIMIZER] = GoogleAdsAgent()
-        # self.agents[AgentRole.MONITOR] = GoogleAdsAgent()
-        # self.agents[AgentRole.ANALYST] = GoogleAdsAgent()
+        self.agents[AgentRole.STRATEGIST] = create_agent(GoogleAdsAgentRole.STRATEGIST)
+        self.agents[AgentRole.CREATOR] = create_agent(GoogleAdsAgentRole.CREATOR)
+        self.agents[AgentRole.OPTIMIZER] = create_agent(GoogleAdsAgentRole.OPTIMIZER)
+        self.agents[AgentRole.MONITOR] = create_agent(GoogleAdsAgentRole.MONITOR)
+        self.agents[AgentRole.ANALYST] = create_agent(GoogleAdsAgentRole.ANALYST)
         
         logger.info(f"Initialized {len(self.agents)} specialized agents")
     
@@ -309,30 +308,29 @@ class CampaignOrchestrator:
             task.error = str(e)
             workflow['status'].failed_tasks += 1
     
-    async def _execute_phase_task(self, task: AgentTask, agent: Any) -> Dict[str, Any]:
+    async def _execute_phase_task(self, task: AgentTask, agent: GoogleAdsAgent) -> Dict[str, Any]:
         """Execute task based on phase"""
         brief = task.context.get('brief', {})
         
         if task.phase == TaskPhase.DISCOVERY:
             # Analyze market and requirements
-            prompt = f"""
-            Analyze the following campaign brief and provide insights:
-            {json.dumps(brief, indent=2)}
-            
-            Include:
-            1. Target audience analysis
-            2. Competitive landscape
-            3. Budget recommendations
-            4. Key performance indicators
-            """
-            response = agent.chat(prompt, "discovery_analysis")
-            return {'analysis': response['response']}
+            result = await agent.analyze_campaign_brief(brief)
+            return {'analysis': result.get('analysis', result)}
         
         elif task.phase == TaskPhase.PLANNING:
             # Create campaign strategy
+            # Get previous analysis if available
+            previous_tasks = [t for t in self.workflows.get(task.id.split('_')[0], {}).get('tasks', []) 
+                            if t.status == TaskStatus.COMPLETED and t.phase == TaskPhase.DISCOVERY]
+            
+            context = {
+                'brief': brief,
+                'discovery_analysis': previous_tasks[0].result if previous_tasks else None
+            }
+            
             prompt = f"""
             Create a comprehensive campaign strategy based on:
-            {json.dumps(brief, indent=2)}
+            {json.dumps(context, indent=2)}
             
             Include:
             1. Campaign structure (campaigns, ad groups)
@@ -340,47 +338,62 @@ class CampaignOrchestrator:
             3. Bidding strategy
             4. Ad creative approach
             5. Budget allocation
+            
+            Return as structured JSON.
             """
-            response = agent.chat(prompt, "strategy_planning")
+            response = await agent.chat(prompt, "strategy_planning")
             return {'strategy': response['response']}
         
         elif task.phase == TaskPhase.CREATION:
             # Create campaign structure
-            # In production, this would use Google Ads API
-            campaign_structure = {
-                'campaign': {
-                    'name': brief.get('campaign_name', 'New Campaign'),
-                    'budget': brief.get('budget', 1000),
-                    'bidding_strategy': brief.get('bidding_strategy', 'MAXIMIZE_CONVERSIONS')
-                },
-                'ad_groups': [
-                    {
-                        'name': 'Ad Group 1',
-                        'keywords': brief.get('keywords', []),
-                        'ads': []
-                    }
-                ]
-            }
-            return {'structure': campaign_structure}
+            # Get strategy from previous phase
+            previous_tasks = [t for t in self.workflows.get(task.id.split('_')[0], {}).get('tasks', []) 
+                            if t.status == TaskStatus.COMPLETED and t.phase == TaskPhase.PLANNING]
+            
+            strategy = previous_tasks[0].result.get('strategy', {}) if previous_tasks else brief
+            
+            if isinstance(agent, GoogleAdsAgent) and agent.role == GoogleAdsAgentRole.CREATOR:
+                result = await agent.generate_campaign_structure(strategy)
+                return {'structure': result.get('campaign_structure', result)}
+            else:
+                # Fallback structure
+                campaign_structure = {
+                    'campaign': {
+                        'name': brief.get('campaign_name', 'New Campaign'),
+                        'budget': brief.get('budget', 1000),
+                        'bidding_strategy': brief.get('bidding_strategy', 'MAXIMIZE_CONVERSIONS')
+                    },
+                    'ad_groups': [
+                        {
+                            'name': 'Ad Group 1',
+                            'keywords': brief.get('keywords', []),
+                            'ads': []
+                        }
+                    ]
+                }
+                return {'structure': campaign_structure}
         
         elif task.phase == TaskPhase.REVIEW:
             # Review campaign quality
-            prompt = f"""
-            Review the campaign configuration for quality and compliance:
-            {json.dumps(task.context, indent=2)}
+            # Get created structure from previous phase
+            previous_tasks = [t for t in self.workflows.get(task.id.split('_')[0], {}).get('tasks', []) 
+                            if t.status == TaskStatus.COMPLETED and t.phase == TaskPhase.CREATION]
             
-            Check for:
-            1. Policy compliance
-            2. Best practice adherence
-            3. Optimization opportunities
-            4. Potential issues
-            """
-            response = agent.chat(prompt, "campaign_review")
-            return {'review': response['response']}
+            review_context = {
+                'brief': brief,
+                'campaign_structure': previous_tasks[0].result if previous_tasks else None
+            }
+            
+            result = await agent.analyze_campaign_brief(review_context)
+            return {'review': result.get('analysis', result)}
         
         elif task.phase == TaskPhase.LAUNCH:
             # Launch campaign
             # In production, this would activate the campaign via API
+            logger.info(f"Launching campaign {task.context.get('campaign_id')}")
+            
+            # Here we would integrate with self.google_ads_service to actually create the campaign
+            # For now, return success
             return {
                 'launched': True,
                 'campaign_id': task.context.get('campaign_id'),
@@ -389,16 +402,41 @@ class CampaignOrchestrator:
         
         elif task.phase == TaskPhase.MONITORING:
             # Set up monitoring
-            monitoring_config = {
-                'alerts': [
-                    {'type': 'budget_overspend', 'threshold': 0.9},
-                    {'type': 'performance_drop', 'threshold': -20},
-                    {'type': 'low_impressions', 'threshold': 100}
-                ],
-                'reporting_frequency': 'daily',
-                'metrics': ['impressions', 'clicks', 'conversions', 'cost']
-            }
-            return {'monitoring_config': monitoring_config}
+            if isinstance(agent, GoogleAdsAgent) and agent.role == GoogleAdsAgentRole.MONITOR:
+                # Get campaign data (in production from Google Ads API)
+                campaign_data = {
+                    'campaign_id': task.context.get('campaign_id'),
+                    'budget': brief.get('budget', 1000),
+                    'current_spend': 0,
+                    'impressions': 0,
+                    'clicks': 0,
+                    'conversions': 0,
+                    'status': 'ENABLED'
+                }
+                
+                result = await agent.monitor_campaign(campaign_data)
+                return result.get('monitoring', {
+                    'alerts': [
+                        {'type': 'budget_overspend', 'threshold': 0.9},
+                        {'type': 'performance_drop', 'threshold': -20},
+                        {'type': 'low_impressions', 'threshold': 100}
+                    ],
+                    'reporting_frequency': 'daily',
+                    'metrics': ['impressions', 'clicks', 'conversions', 'cost']
+                })
+            else:
+                # Fallback monitoring config
+                return {
+                    'monitoring_config': {
+                        'alerts': [
+                            {'type': 'budget_overspend', 'threshold': 0.9},
+                            {'type': 'performance_drop', 'threshold': -20},
+                            {'type': 'low_impressions', 'threshold': 100}
+                        ],
+                        'reporting_frequency': 'daily',
+                        'metrics': ['impressions', 'clicks', 'conversions', 'cost']
+                    }
+                }
         
         else:
             raise ValueError(f"Unknown task phase: {task.phase}")
