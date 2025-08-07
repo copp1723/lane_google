@@ -46,9 +46,9 @@ class GoogleAdsConfig:
 
 @dataclass
 class OpenAIConfig:
-    """OpenAI API configuration"""
-    api_key: Optional[str] = field(default_factory=lambda: os.getenv('OPENAI_API_KEY'))
-    model: str = field(default_factory=lambda: os.getenv('OPENAI_MODEL', 'gpt-4'))
+    """AI API configuration (OpenRouter/OpenAI)"""
+    api_key: Optional[str] = field(default_factory=lambda: os.getenv('OPENROUTER_API_KEY') or os.getenv('OPENAI_API_KEY'))
+    model: str = field(default_factory=lambda: os.getenv('OPENROUTER_DEFAULT_MODEL', os.getenv('OPENAI_MODEL', 'anthropic/claude-3.5-sonnet')))
     max_tokens: int = field(default_factory=lambda: int(os.getenv('OPENAI_MAX_TOKENS', '1000')))
     temperature: float = field(default_factory=lambda: float(os.getenv('OPENAI_TEMPERATURE', '0.7')))
 
@@ -144,9 +144,9 @@ class ApplicationSettings:
         if not self.google_ads.developer_token:
             warnings.append('Google Ads developer token not configured - Google Ads features will be disabled')
         
-        # Check OpenAI configuration
+        # Check AI configuration (OpenRouter/OpenAI)
         if not self.openai.api_key:
-            warnings.append('OpenAI API key not configured - AI features will be disabled')
+            warnings.append('AI API key not configured (OPENROUTER_API_KEY or OPENAI_API_KEY) - AI features will be disabled')
         
         return {
             'errors': errors,
@@ -181,7 +181,7 @@ class ApplicationSettings:
             },
             'services': {
                 'google_ads_configured': bool(self.google_ads.client_id and self.google_ads.developer_token),
-                'openai_configured': bool(self.openai.api_key),
+                'ai_configured': bool(self.openai.api_key),
                 'redis_configured': 'redis://' in self.redis.url
             }
         }
