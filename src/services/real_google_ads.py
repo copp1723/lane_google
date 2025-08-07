@@ -75,24 +75,14 @@ class RealGoogleAdsService:
                 # Remove hyphens from customer ID
                 config_dict['login_customer_id'] = login_customer_id.replace('-', '')
             
-            # Try to initialize client with dict config
+            # Initialize client with dict config only (no YAML fallback)
             try:
                 self.client = GoogleAdsClient.load_from_dict(config_dict)
                 logger.info("Google Ads client initialized successfully from environment")
             except Exception as dict_error:
                 logger.warning(f"Failed to load from dict: {dict_error}")
-                
-                # Fallback: Try to load from google-ads.yaml if it exists
-                yaml_path = Path('google-ads.yaml')
-                if yaml_path.exists():
-                    try:
-                        self.client = GoogleAdsClient.load_from_storage(str(yaml_path))
-                        logger.info("Google Ads client initialized from google-ads.yaml")
-                    except Exception as yaml_error:
-                        logger.error(f"Failed to load from yaml: {yaml_error}")
-                        raise
-                else:
-                    raise dict_error
+                # Don't try YAML fallback as it can cause environment variable parsing issues
+                raise dict_error
             
         except Exception as e:
             logger.error(f"Failed to initialize Google Ads client: {str(e)}")
@@ -102,6 +92,34 @@ class RealGoogleAdsService:
             logger.info("3. Add the generated credentials to your .env file")
             logger.info("4. Install Google Ads client: pip install google-ads")
             self.client = None
+    
+    def test_connection(self):
+        """Test the Google Ads API connection"""
+        if not self.client:
+            return {
+                'status': 'error',
+                'service_type': 'real',
+                'message': 'Google Ads client not initialized. Check your credentials.'
+            }
+        
+        try:
+            # Try to make a simple API call to test the connection
+            customer_service = self.client.get_service("CustomerService")
+            accessible_customers = customer_service.list_accessible_customers()
+            
+            return {
+                'status': 'connected',
+                'service_type': 'real',
+                'message': 'Successfully connected to Google Ads API',
+                'customer_count': len(accessible_customers.resource_names)
+            }
+        except Exception as e:
+            logger.error(f"Connection test failed: {str(e)}")
+            return {
+                'status': 'error',
+                'service_type': 'real',
+                'message': f'Connection test failed: {str(e)}'
+            }
     
     @handle_google_ads_error
     def get_accessible_customers(self) -> List[Dict[str, Any]]:
