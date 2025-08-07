@@ -31,23 +31,38 @@ class KeywordResearchService:
         try:
             from dotenv import load_dotenv
             load_dotenv()
-            
+
             # Check for required environment variables
             required_vars = [
                 'GOOGLE_ADS_CLIENT_ID',
-                'GOOGLE_ADS_CLIENT_SECRET', 
+                'GOOGLE_ADS_CLIENT_SECRET',
                 'GOOGLE_ADS_REFRESH_TOKEN',
                 'GOOGLE_ADS_DEVELOPER_TOKEN'
             ]
-            
+
             missing_vars = [var for var in required_vars if not os.getenv(var)]
             if missing_vars:
                 logger.error(f"Missing Google Ads API variables: {missing_vars}")
                 return
-                
-            self.client = GoogleAdsClient.load_from_env()
+
+            # Create configuration dict (consistent with other services)
+            config = {
+                "use_proto_plus": True,
+                "developer_token": os.getenv('GOOGLE_ADS_DEVELOPER_TOKEN'),
+                "client_id": os.getenv('GOOGLE_ADS_CLIENT_ID'),
+                "client_secret": os.getenv('GOOGLE_ADS_CLIENT_SECRET'),
+                "refresh_token": os.getenv('GOOGLE_ADS_REFRESH_TOKEN'),
+                "transport": "rest"  # Use REST transport to avoid gRPC issues
+            }
+
+            # Add login customer ID if available
+            login_customer_id = os.getenv('GOOGLE_ADS_LOGIN_CUSTOMER_ID')
+            if login_customer_id:
+                config["login_customer_id"] = login_customer_id
+
+            self.client = GoogleAdsClient.load_from_dict(config)
             logger.info("Google Ads client initialized for keyword research")
-            
+
         except Exception as e:
             logger.error(f"Failed to initialize Google Ads client: {str(e)}")
             self.client = None

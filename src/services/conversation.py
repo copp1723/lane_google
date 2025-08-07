@@ -36,6 +36,7 @@ class Conversation(db.Model):
     """Conversation model for AI agent interactions"""
     
     __tablename__ = 'conversations'
+    __table_args__ = {'extend_existing': True}
     
     # Primary identification
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))

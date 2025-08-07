@@ -42,13 +42,14 @@ class RealGoogleAdsService:
                 logger.error(f"Missing required environment variables: {missing_vars}")
                 return
                 
-            # Create configuration dict
+            # Create configuration dict with REST transport as fallback
             config = {
                 "use_proto_plus": True,
                 "developer_token": os.getenv('GOOGLE_ADS_DEVELOPER_TOKEN'),
                 "client_id": os.getenv('GOOGLE_ADS_CLIENT_ID'),
                 "client_secret": os.getenv('GOOGLE_ADS_CLIENT_SECRET'),
-                "refresh_token": os.getenv('GOOGLE_ADS_REFRESH_TOKEN')
+                "refresh_token": os.getenv('GOOGLE_ADS_REFRESH_TOKEN'),
+                "transport": "rest"  # Use REST transport to avoid gRPC issues
             }
             
             # Add login customer ID if available
@@ -463,6 +464,36 @@ class RealGoogleAdsService:
         except Exception as e:
             logger.error(f"Error updating campaign status: {str(e)}")
             raise
+
+    def test_connection(self) -> bool:
+        """Test the Google Ads API connection"""
+        if not self.client:
+            logger.error("Google Ads client not initialized")
+            return False
+
+        try:
+            # Try to get customer info for the login customer ID
+            login_customer_id = os.getenv('GOOGLE_ADS_LOGIN_CUSTOMER_ID')
+            if login_customer_id:
+                customer_info = self.get_customer_info(login_customer_id)
+                if customer_info:
+                    logger.info(f"Successfully connected to Google Ads API. Customer: {customer_info.get('name', 'Unknown')}")
+                    return True
+
+            # If no login customer ID, try to list accessible customers
+            customer_service = self.client.get_service("CustomerService")
+            accessible_customers = customer_service.list_accessible_customers()
+
+            if accessible_customers.resource_names:
+                logger.info(f"Successfully connected to Google Ads API. Found {len(accessible_customers.resource_names)} accessible customers.")
+                return True
+            else:
+                logger.warning("Connected to Google Ads API but no accessible customers found")
+                return False
+
+        except Exception as e:
+            logger.error(f"Failed to test Google Ads API connection: {str(e)}")
+            return False
 
 
 # Global instance
