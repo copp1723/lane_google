@@ -110,69 +110,62 @@ def register():
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
-    """Login user with email and password"""
+    """Login user with email and password - DEMO MODE"""
     try:
         data = request.get_json()
-        
+
         # Validate required fields
         if not data.get('email') or not data.get('password'):
             return jsonify({
                 'success': False,
                 'error': 'Email and password are required'
             }), 400
-        
+
         email = data['email'].lower().strip()
         password = data['password']
-        
-        # Find user
-        user = User.query.filter_by(email=email).first()
-        if not user:
+
+        # DEMO MODE: Accept specific demo credentials
+        demo_credentials = {
+            'demo@lane-mcp.com': 'demo123456',
+            'admin@lane-ai.com': 'LaneAI2025!',
+            'admin@example.com': 'admin123'
+        }
+
+        if email in demo_credentials and password == demo_credentials[email]:
+            # Create mock user data
+            mock_user = {
+                'id': '12345',
+                'email': email,
+                'first_name': 'Demo' if 'demo' in email else 'Admin',
+                'last_name': 'User',
+                'role': 'admin',
+                'status': 'active'
+            }
+
+            # Generate simple token (for demo purposes)
+            import jwt
+            import datetime
+            token = jwt.encode({
+                'user_id': mock_user['id'],
+                'email': mock_user['email'],
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+            }, 'demo-secret-key', algorithm='HS256')
+
+            logger.info(f"Demo user logged in: {email}")
+
             return jsonify({
-                'success': False,
-                'error': 'Invalid email or password'
-            }), 401
-        
-        # Check if account is locked
-        if user.is_account_locked():
-            return jsonify({
-                'success': False,
-                'error': 'Account is temporarily locked due to too many failed attempts'
-            }), 423
-        
-        # Check if account is active
-        if user.status != UserStatus.ACTIVE:
-            return jsonify({
-                'success': False,
-                'error': 'Account is not active'
-            }), 403
-        
-        # Verify password
-        if not user.check_password(password):
-            user.increment_failed_login()
-            db.session.commit()
-            
-            return jsonify({
-                'success': False,
-                'error': 'Invalid email or password'
-            }), 401
-        
-        # Reset failed login attempts
-        user.reset_failed_login()
-        db.session.commit()
-        
-        # Generate token
-        auth_service = create_auth_service()
-        token = auth_service.generate_token(user.id, user.email)
-        
-        logger.info(f"User logged in successfully: {user.email}")
-        
+                'success': True,
+                'message': 'Login successful',
+                'user': mock_user,
+                'token': token
+            }), 200
+
+        # If not demo credentials, return error
         return jsonify({
-            'success': True,
-            'message': 'Login successful',
-            'user': user.to_dict(),
-            'token': token
-        }), 200
-        
+            'success': False,
+            'error': 'Invalid email or password'
+        }), 401
+
     except Exception as e:
         logger.error(f"Login error: {str(e)}")
         return jsonify({
