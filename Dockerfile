@@ -8,10 +8,15 @@ WORKDIR /app
 COPY package*.json ./
 COPY vite.config.js ./
 COPY index.html ./
-COPY .env.production ./.env
 
 # Install dependencies
 RUN npm install
+
+# Set production environment variables for build
+ENV VITE_API_BASE_URL=https://lane-google.onrender.com
+ENV VITE_APP_NAME="Lane AI"
+ENV VITE_APP_VERSION="2.0.0"
+ENV VITE_ENVIRONMENT=production
 
 # Copy source files
 COPY src ./src
@@ -33,9 +38,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application's code from the host to the container at /app
 COPY . /app/
-
-# Ensure the backend environment file is available
-COPY .env /app/.env
 
 # Copy built frontend from the frontend-builder stage
 COPY --from=frontend-builder /app/src/static /app/src/static
